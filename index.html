@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Recorrido interactivo sobre planificación inversa para docentes de la Red Básica.">
+<title>Planificación Inversa · Red Básica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: blanco neutro tipo cuaderno de diseño; columna de lectura de ~70ch con barra de secciones y "mesas" de juego */
+:root{
+  --bg:#fbfbfa; --surface:#ffffff; --sunk:#f3f3f1; --line:#e3e3df; --line-strong:#cfcfc9;
+  --ink:#1d1f21; --ink-2:#55585c; --ink-3:#86898d;
+  --accent:#34495a; --accent-soft:#e8edf1;
+  --ok:#2f6b4a; --ok-soft:#e5f1ea; --bad:#9a3b32; --bad-soft:#f6e7e5;
+  --gold:#b8912a; --silver:#8e979f; --bronze:#a2653a; --iron:#6f7276;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161718; --surface:#1e2022; --sunk:#252729; --line:#313437; --line-strong:#43474b;
+  --ink:#ececea; --ink-2:#b1b4b7; --ink-3:#83878b;
+  --accent:#a9c0d1; --accent-soft:#26313a;
+  --ok:#8fcaa6; --ok-soft:#1e3127; --bad:#e3a39b; --bad-soft:#3a2422; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#161718; --surface:#1e2022; --sunk:#252729; --line:#313437; --line-strong:#43474b;
+  --ink:#ececea; --ink-2:#b1b4b7; --ink-3:#83878b;
+  --accent:#a9c0d1; --accent-soft:#26313a;
+  --ok:#8fcaa6; --ok-soft:#1e3127; --bad:#e3a39b; --bad-soft:#3a2422; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3.1rem);letter-spacing:-.02em}
+h2{font-size:clamp(1.5rem,3.4vw,2rem);letter-spacing:-.01em}
+h3{font-size:1.15rem}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+button,select,textarea,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);padding:.65rem 1.2rem;border-radius:999px;font-weight:600}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+.btn.small{padding:.35rem .85rem;font-size:.9rem}
+
+/* ---------- Pantalla inicial ---------- */
+#welcome{min-height:100%;display:grid;place-items:center;padding:48px 16px}
+.w-card{width:100%;max-width:560px;display:grid;gap:28px}
+.w-mark{display:flex;gap:10px;align-items:center}
+.w-steps{display:flex;gap:6px}
+.w-steps span{width:34px;height:6px;border-radius:3px;background:var(--line-strong)}
+.w-steps span:first-child{background:var(--ink)}
+.w-lead{color:var(--ink-2);font-size:1.08rem;max-width:46ch}
+.field{display:grid;gap:8px}
+.field label{font-weight:600}
+select.big{width:100%;padding:.85rem 1rem;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--surface);font-size:1.05rem}
+.w-foot{font-size:.9rem;color:var(--ink-3)}
+
+/* ---------- App ---------- */
+#app{max-width:1080px;margin:0 auto;padding:0 16px 64px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:grid;gap:10px;padding-block:14px 0}
+.top-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.brand{display:flex;flex-direction:column}
+.brand b{font-family:var(--f-display);font-size:1.15rem}
+.chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line-strong);border-radius:999px;padding:.25rem .75rem;font-size:.88rem;background:var(--surface)}
+.chip.score b{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;padding:0;font-size:.88rem}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{white-space:nowrap;background:none;border:0;border-bottom:2px solid transparent;padding:.6rem .8rem;color:var(--ink-2);font-weight:600}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+section.view{padding-top:36px;display:grid;gap:36px}
+.intro{display:grid;gap:12px;max-width:70ch}
+.intro p{color:var(--ink-2);font-size:1.08rem}
+.prose{max-width:70ch;display:grid;gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:10px;align-content:start;min-width:0}
+.panel p{color:var(--ink-2)}
+.quote{border-left:3px solid var(--ink);padding:4px 0 4px 18px;font-size:1.12rem;max-width:62ch}
+.quote cite{display:block;margin-top:6px;font-style:normal;font-size:.88rem;color:var(--ink-3)}
+
+/* comparación de flujos */
+.flow{display:grid;gap:10px}
+.flow-row{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center}
+.flow-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.flow-steps div{border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;font-size:.95rem;background:var(--surface)}
+.flow-steps div small{display:block;font-family:var(--f-mono);font-size:.7rem;color:var(--ink-3)}
+.flow-row.inv .flow-steps div{border-color:var(--ink);}
+.flow-row.inv .flow-steps div:nth-child(2){background:var(--accent-soft)}
+.flow-label{font-weight:700;font-size:.92rem}
+@media (max-width:620px){.flow-row{grid-template-columns:1fr}.flow-steps{grid-template-columns:1fr}}
+
+/* etapas */
+.stage{display:grid;grid-template-columns:72px 1fr;gap:20px;padding:24px 0;border-top:1px solid var(--line)}
+.stage-num{font-family:var(--f-display);font-size:3rem;line-height:1;color:var(--ink-3)}
+.stage-body{display:grid;gap:14px;min-width:0}
+.q{font-style:italic;color:var(--ink-2)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.kv div{background:var(--sunk);border-radius:8px;padding:12px 14px}
+.kv b{display:block;font-size:.95rem;margin-bottom:2px}
+.kv span{font-size:.93rem;color:var(--ink-2)}
+@media (max-width:560px){.stage{grid-template-columns:1fr;gap:6px}.stage-num{font-size:2.2rem}}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:500;background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+.oa{border:1px solid var(--ink);border-radius:var(--r);padding:18px 20px;display:grid;gap:8px;background:var(--surface)}
+.oa .code{font-family:var(--f-mono);font-size:.8rem;color:var(--ink-3)}
+.note{font-size:.9rem;color:var(--ink-3)}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:.7rem;padding:.1rem .45rem;border-radius:4px;background:var(--accent-soft);color:var(--accent);margin-right:4px;vertical-align:1px}
+
+/* recursos */
+.video{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface);text-decoration:none;color:inherit}
+.video-thumb{aspect-ratio:16/9;max-width:100%;background:var(--ink);display:grid;place-items:center;position:relative}
+.video-thumb::after{content:"";width:64px;height:64px;border-radius:50%;background:var(--bg);opacity:.95}
+.video-thumb::before{content:"";position:absolute;z-index:1;border-left:20px solid var(--ink);border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:6px}
+.video-info{padding:22px;display:grid;gap:10px;align-content:center}
+.video:hover .video-thumb::after{transform:scale(1.06)}
+@media (max-width:640px){.video{grid-template-columns:1fr}}
+.res-list{display:grid;gap:0;border-top:1px solid var(--line)}
+.res-list a{display:grid;grid-template-columns:110px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+.res-list a:hover b{text-decoration:underline}
+.res-list span.kind{font-family:var(--f-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);padding-top:3px}
+.res-list p{color:var(--ink-2);font-size:.95rem}
+@media (max-width:520px){.res-list a{grid-template-columns:1fr;gap:2px}}
+
+/* juegos */
+.games-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.gcard{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:6px;align-content:start}
+.gcard:hover{border-color:var(--ink)}
+.gcard[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.gcard b{font-family:var(--f-display);font-size:1.05rem}
+.gcard span{font-size:.9rem;color:var(--ink-2)}
+.gcard .prog{font-family:var(--f-mono);font-size:.75rem;color:var(--ink-3)}
+.table{background:var(--surface);border:1px solid var(--line-strong);border-radius:14px;padding:24px;display:grid;gap:18px;min-width:0}
+.table-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.pool{display:flex;flex-wrap:wrap;gap:8px}
+.card{border:1px solid var(--line-strong);background:var(--bg);border-radius:8px;padding:.5rem .8rem;font-size:.95rem;text-align:left}
+.card[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.bins{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.bin{border:1px dashed var(--line-strong);border-radius:10px;padding:12px;min-height:120px;display:grid;gap:6px;align-content:start;background:var(--bg);text-align:left}
+.bin:hover{border-color:var(--ink)}
+.bin h4{margin:0;font-family:var(--f-display);font-size:.98rem}
+.bin small{color:var(--ink-3);font-size:.8rem}
+.placed{font-size:.88rem;padding:.3rem .55rem;border-radius:6px;background:var(--sunk)}
+.placed.ok{background:var(--ok-soft);color:var(--ok)}
+.placed.bad{background:var(--bad-soft);color:var(--bad)}
+@media (max-width:640px){.bins{grid-template-columns:1fr}}
+.qbox{display:grid;gap:14px}
+.qtext{font-size:1.15rem;font-weight:600;max-width:60ch}
+.opts{display:flex;flex-wrap:wrap;gap:10px}
+.opts.col{display:grid}
+.opt{border:1px solid var(--line-strong);background:var(--bg);padding:.7rem 1rem;border-radius:10px;text-align:left;font-size:.98rem}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.opt.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.opt:disabled{cursor:default}
+.feedback{border-radius:10px;padding:12px 14px;font-size:.96rem}
+.feedback.ok{background:var(--ok-soft);color:var(--ok)}
+.feedback.bad{background:var(--bad-soft);color:var(--bad)}
+.meter{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
+.match{display:grid;gap:10px}
+.match-row{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.match-row.ok{border-color:var(--ok);background:var(--ok-soft)}
+.match-row.bad{border-color:var(--bad);background:var(--bad-soft)}
+.match-row select{padding:.5rem;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);width:100%}
+@media (max-width:600px){.match-row{grid-template-columns:1fr}}
+.case{display:grid;gap:8px}
+.case-el{display:grid;grid-template-columns:130px 1fr;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);text-align:left;width:100%}
+.case-el b{font-family:var(--f-mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);padding-top:2px;font-weight:500}
+.case-el:hover:not(:disabled){border-color:var(--ink)}
+.case-el.ok{border-color:var(--ok);background:var(--ok-soft)}
+.case-el.bad{border-color:var(--bad);background:var(--bad-soft)}
+@media (max-width:520px){.case-el{grid-template-columns:1fr;gap:2px}}
+.badge-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.level{font-family:var(--f-display);font-weight:700}
+
+.row-btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* punto de control por sección */
+.checkpoint{border:1px solid var(--ink);border-radius:14px;padding:24px;display:grid;gap:18px;background:var(--surface)}
+.cp-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.cp-pts{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.95rem}
+.cp-q{display:grid;gap:10px;padding-top:16px;border-top:1px solid var(--line)}
+.cp-q p{font-weight:600}
+.cp-done{display:inline-flex;gap:8px;align-items:center;font-weight:600;color:var(--ok)}
+.selfcheck{display:flex;gap:10px;align-items:center;font-weight:600}
+.selfcheck input{width:20px;height:20px;accent-color:var(--ink)}
+
+/* resultado */
+.result{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;align-items:start}
+@media (max-width:760px){.result{grid-template-columns:1fr}}
+.medal-card{border:1px solid var(--line-strong);border-radius:16px;padding:28px 20px;display:grid;gap:10px;justify-items:center;text-align:center;background:var(--surface)}
+.medal-card svg{width:170px;max-width:100%;height:auto}
+.medal-cat{font-family:var(--f-display);font-size:2rem;font-weight:700;letter-spacing:-.01em}
+.medal-pts{font-family:var(--f-mono);font-size:1rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:.78rem;font-weight:600;padding:.15rem .6rem;border-radius:999px;background:var(--sunk);color:var(--ink-2)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.scale td:first-child{white-space:nowrap}
+.scale tr.me td{background:var(--accent-soft);font-weight:600}
+.sec-bar{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;min-width:80px}
+.sec-bar i{display:block;height:100%;background:var(--ink)}
+.confirm{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* clase en tres tiempos */
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.plan-grid .field.wide{grid-column:1/-1}
+input[type=text],textarea{width:100%;border:1px solid var(--line-strong);border-radius:8px;padding:.6rem .75rem;background:var(--bg);resize:vertical;font-size:.96rem}
+.field label{font-weight:600;font-size:.95rem}
+.moment{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+.moment-head{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--sunk)}
+.moment-head h3{font-size:1.2rem}
+.moment-head span{color:var(--ink-2);font-size:.95rem}
+.moment-body{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
+.moment-col{padding:16px 20px;display:grid;gap:8px;align-content:start;border-right:1px solid var(--line);min-width:0}
+.moment-col:last-child{border-right:0}
+@media (max-width:760px){.moment-body{grid-template-columns:1fr}.moment-col{border-right:0;border-bottom:1px solid var(--line)}.moment-col:last-child{border-bottom:0}}
+details.sug{font-size:.9rem}
+details.sug summary{cursor:pointer;color:var(--accent);font-weight:600;list-style:none;display:inline-flex;gap:6px;align-items:center}
+details.sug summary::-webkit-details-marker{display:none}
+details.sug summary::before{content:"+";font-family:var(--f-mono);width:18px;height:18px;border:1px solid currentColor;border-radius:50%;display:inline-grid;place-items:center;font-size:.8rem;line-height:1}
+details.sug[open] summary::before{content:"–"}
+details.sug ul{margin:8px 0 0;padding:10px 12px 10px 28px;background:var(--accent-soft);border-radius:8px;color:var(--ink-2);display:grid;gap:4px}
+.cl{display:grid;gap:10px}
+.cl label{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:.96rem}
+.cl input{margin-top:4px;width:18px;height:18px;accent-color:var(--ink)}
+.toast{font-size:.9rem;color:var(--ok)}
+
+.share{border:1px solid var(--ink);border-radius:14px;padding:24px;display:grid;gap:18px;background:var(--surface)}
+.share-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.share-grid > div{display:grid;gap:10px;align-content:start;min-width:0}
+a.btn{text-decoration:none;display:inline-block;text-align:center}
+.status{font-size:.9rem}
+.status.bad{color:var(--bad)} .status.ok{color:var(--ok)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>html,body{height:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+
+
+<!-- ============ PANTALLA INICIAL ============ -->
+<div id="welcome">
+  <div class="w-card">
+    <div class="w-mark">
+      <div class="w-steps" aria-hidden="true"><span></span><span></span><span></span></div>
+      <span class="eyebrow">Red Básica · 2026</span>
+    </div>
+    <div style="display:grid;gap:14px">
+      <h1>Planificación Inversa</h1>
+      <p class="w-lead">Un espacio de consulta y práctica para diseñar unidades desde el aprendizaje esperado: primero la meta, luego la evidencia y al final las actividades.</p>
+    </div>
+    <div class="field">
+      <label for="colegio">Selecciona tu colegio</label>
+      <select id="colegio" class="big">
+        <option value="">— Elige un colegio de la Red —</option>
+        <option>Colegio Montessori</option>
+        <option>Colegio del Alba</option>
+        <option>Colegio Mosaicos</option>
+        <option>Colegios The International Schools</option>
+        <option>Colegio El Roble</option>
+        <option>Colegio Luis Gallardo</option>
+        <option>Colegio Jhon Wall holcombs</option>
+        <option>Colegio San Juan de la Blachere</option>
+        <option>Colegio Alta Cordillera</option>
+      </select>
+    </div>
+    <div><button class="btn" id="enter" disabled>Ingresar</button></div>
+    <p class="w-foot">Basado en la presentación de la Red Básica (junio 2026) y en el modelo de Wiggins y McTighe.</p>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="top-row">
+      <div class="brand"><span class="eyebrow">Red Básica</span><b>Planificación Inversa</b></div>
+      <div class="chips">
+        <span class="chip"><span id="schoolName">—</span> <button class="linkbtn" id="changeSchool">cambiar</button></span>
+        <span class="chip score">Puntaje <b id="score">0</b>/100</span>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Secciones">
+      <button role="tab" data-view="fundamentos" aria-selected="true">Fundamentos</button>
+      <button role="tab" data-view="etapas">Las 3 etapas</button>
+      <button role="tab" data-view="ejemplo">Ejemplo resuelto</button>
+      <button role="tab" data-view="recursos">Videos y recursos</button>
+      <button role="tab" data-view="juegos">Juegos</button>
+      <button role="tab" data-view="resultado">Resultado</button>
+      <button role="tab" data-view="clase">Mi clase en tres tiempos</button>
+    </nav>
+  </header>
+
+  <!-- FUNDAMENTOS -->
+  <section class="view" id="v-fundamentos">
+    <div class="intro">
+      <span class="eyebrow">Comprensión a través del diseño</span>
+      <h2>Empezar por el final para enseñar con dirección</h2>
+      <p>La Planificación Inversa es un modelo de diseño curricular desarrollado por Grant Wiggins y Jay McTighe. Se define primero qué deben lograr los estudiantes, luego cómo lo demostrarán y, solo después, qué actividades lo harán posible.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="panel"><span class="eyebrow">Pregunta orientadora</span><h3>¿Cómo logramos que más estudiantes comprendan profundamente lo que se espera que aprendan?</h3></div>
+      <div class="panel"><span class="eyebrow">Propósito</span><p>Promover una comprensión profunda y significativa, que el estudiante pueda aplicar y transferir a situaciones de su vida cotidiana.</p></div>
+      <div class="panel"><span class="eyebrow">Rol docente</span><p>Diseñador de experiencias de aprendizaje y mentor que guía la construcción de conocimientos, habilidades y actitudes.</p></div>
+    </div>
+
+    <div class="prose">
+      <h3>¿Qué significa comprender?</h3>
+      <div class="grid-3">
+        <div class="panel"><b>Entender por qué es así</b><p>Explicar causas, razones y relaciones, no solo repetir el dato.</p></div>
+        <div class="panel"><b>Dar sentido a lo que sé</b><p>Conectar la información con ideas mayores y con la propia experiencia.</p></div>
+        <div class="panel"><b>Poder usar lo que sé</b><p>Aplicar el aprendizaje en una situación nueva, sin la guía del docente.</p></div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <h3>Tradicional frente a inversa</h3>
+      <div class="flow">
+        <div class="flow-row"><span class="flow-label">Tradicional</span>
+          <div class="flow-steps"><div><small>1</small>Contenidos y habilidades</div><div><small>2</small>Actividades de aprendizaje</div><div><small>3</small>Evaluación vinculada a un indicador y OA</div></div></div>
+        <div class="flow-row inv"><span class="flow-label">Inversa</span>
+          <div class="flow-steps"><div><small>1</small>Definir objetivos de aprendizaje</div><div><small>2</small>Determinar la evaluación de los objetivos</div><div><small>3</small>Diseñar el plan de actividades</div></div></div>
+      </div>
+      <p class="note">El cambio está en el paso 2: la evidencia se decide antes de las actividades, de modo que cada actividad prepara para esa evidencia.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <span class="eyebrow">Relación con el Decreto N°67/2018</span>
+        <h3>Ambos ponen el aprendizaje al centro</h3>
+        <p>El Decreto 67 releva la evaluación formativa y la retroalimentación como parte de la enseñanza. La planificación inversa lo favorece porque:</p>
+        <ul style="margin:0;padding-left:1.1rem;color:var(--ink-2);display:grid;gap:4px">
+          <li>define criterios de logro desde el inicio;</li>
+          <li>permite monitorear avances durante el proceso;</li>
+          <li>facilita ajustar la enseñanza según lo observado;</li>
+          <li>entrega claridad a los estudiantes sobre qué se espera de ellos.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Relación con el Decreto N°83 (DUA)</span>
+        <h3>Diseñar la evidencia pensando en todos</h3>
+        <p>Al definir la evidencia antes de las actividades se pueden planificar desde el inicio múltiples formas de <b>representación</b> (cómo se presenta el contenido), <b>acción y expresión</b> (cómo se demuestra el logro) y <b>compromiso</b> (por qué vale la pena aprenderlo), sin modificar el OA.</p>
+      </div>
+    </div>
+
+    <blockquote class="quote">No es la enseñanza lo que causa el aprendizaje: son los intentos del aprendiz por aprender y hacer, y eso depende de la calidad de la retroalimentación y de las oportunidades para usarla.
+      <cite>Grant Wiggins (1950–2015), idea citada en la presentación de la Red</cite></blockquote>
+    <div class="checkpoint" data-sec="fundamentos"></div>
+  </section>
+
+  <!-- ETAPAS -->
+  <section class="view" id="v-etapas" hidden>
+    <div class="intro">
+      <span class="eyebrow">El modelo en detalle</span>
+      <h2>Las tres etapas y lo que se decide en cada una</h2>
+      <p>Cada etapa responde una pregunta. Si una etapa no se puede responder con claridad, la siguiente pierde coherencia.</p>
+    </div>
+
+    <div>
+      <div class="stage">
+        <div class="stage-num">1</div>
+        <div class="stage-body">
+          <h3>Identificar los resultados deseados</h3>
+          <p class="q">¿Qué deben saber, comprender y ser capaces de hacer los estudiantes al terminar la unidad?</p>
+          <div class="kv">
+            <div><b>Objetivo(s) de Aprendizaje</b><span>OA textuales del Programa de Estudio MINEDUC para el nivel y la unidad. No se reformulan.</span></div>
+            <div><b>Meta de transferencia</b><span>Lo que el estudiante podrá hacer por sí solo en una situación nueva y real.</span></div>
+            <div><b>Comprensiones duraderas</b><span>Ideas centrales que se espera que permanezcan. Se redactan como "Los estudiantes comprenderán que…".</span></div>
+            <div><b>Preguntas esenciales</b><span>Preguntas abiertas que no se responden con un dato y que se retoman durante toda la unidad.</span></div>
+            <div><b>Conocimientos y habilidades</b><span>Lo que el estudiante sabrá (conceptos) y hará (procedimientos), tomado de los indicadores del Programa.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="stage-num">2</div>
+        <div class="stage-body">
+          <h3>Determinar la evidencia aceptable</h3>
+          <p class="q">¿Cómo sabremos que los estudiantes lograron los resultados de la Etapa 1?</p>
+          <div class="kv">
+            <div><b>Tarea de desempeño</b><span>Situación auténtica donde el estudiante aplica lo aprendido. Se diseña con el formato GRASPS.</span></div>
+            <div><b>Criterios de logro</b><span>Rúbrica o lista de cotejo con descriptores observables, compartida con los estudiantes desde el inicio.</span></div>
+            <div><b>Otras evidencias</b><span>Tickets de salida, pruebas breves, observación, cuaderno. Informan el ajuste de la enseñanza (uso formativo).</span></div>
+          </div>
+          <div class="tbl"><table>
+            <thead><tr><th>GRASPS</th><th>Pregunta que responde</th></tr></thead>
+            <tbody>
+              <tr><td><b>G</b> · Meta</td><td>¿Qué problema o desafío debe resolver el estudiante?</td></tr>
+              <tr><td><b>R</b> · Rol</td><td>¿Quién es el estudiante en la situación?</td></tr>
+              <tr><td><b>A</b> · Audiencia</td><td>¿Para quién es el producto?</td></tr>
+              <tr><td><b>S</b> · Situación</td><td>¿Cuál es el contexto concreto?</td></tr>
+              <tr><td><b>P</b> · Producto</td><td>¿Qué elaborará o presentará?</td></tr>
+              <tr><td><b>S</b> · Estándares</td><td>¿Con qué criterios se evaluará?</td></tr>
+            </tbody></table></div>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="stage-num">3</div>
+        <div class="stage-body">
+          <h3>Planificar experiencias de aprendizaje</h3>
+          <p class="q">¿Qué actividades y en qué orden preparan a los estudiantes para rendir la evidencia de la Etapa 2?</p>
+          <div class="tbl"><table>
+            <thead><tr><th>WHERETO</th><th>Criterio de la secuencia</th><th>Cómo se observa en clase</th></tr></thead>
+            <tbody>
+              <tr><td><b>W</b> · Hacia dónde</td><td>El estudiante sabe qué aprenderá y cómo será evaluado.</td><td>Objetivo y criterios de logro visibles y explicados al inicio.</td></tr>
+              <tr><td><b>H</b> · Enganchar</td><td>Se despierta el interés desde una pregunta o situación.</td><td>Problema o pregunta esencial planteada en la primera clase.</td></tr>
+              <tr><td><b>E</b> · Explorar y equipar</td><td>Se entregan los conocimientos y habilidades necesarios.</td><td>Modelado, práctica guiada y práctica independiente.</td></tr>
+              <tr><td><b>R</b> · Repensar</td><td>Se revisa y mejora el trabajo con retroalimentación.</td><td>Borradores con comentarios y segunda versión.</td></tr>
+              <tr><td><b>E</b> · Evaluar</td><td>El estudiante evalúa su progreso.</td><td>Autoevaluación o coevaluación con la rúbrica.</td></tr>
+              <tr><td><b>T</b> · Adaptar</td><td>Se ajusta a la diversidad del curso (DUA, Decreto 83).</td><td>Opciones de formato, apoyos y niveles de andamiaje.</td></tr>
+              <tr><td><b>O</b> · Organizar</td><td>La secuencia va de lo concreto a la transferencia.</td><td>Orden de clases que culmina en la tarea de desempeño.</td></tr>
+            </tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <h3>Las seis facetas de la comprensión</h3>
+      <p style="color:var(--ink-2)">Wiggins y McTighe proponen seis formas de evidenciar que un estudiante comprende. Sirven para redactar la evidencia de la Etapa 2.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Faceta</th><th>El estudiante…</th><th>Verbos útiles</th></tr></thead>
+        <tbody>
+          <tr><td><b>Explicar</b></td><td>da razones y relaciones causa-efecto.</td><td>explicar, justificar, predecir</td></tr>
+          <tr><td><b>Interpretar</b></td><td>da sentido a datos, textos o experiencias.</td><td>interpretar, traducir, analizar</td></tr>
+          <tr><td><b>Aplicar</b></td><td>usa lo aprendido en un contexto nuevo.</td><td>resolver, diseñar, construir</td></tr>
+          <tr><td><b>Tener perspectiva</b></td><td>reconoce distintos puntos de vista.</td><td>comparar, contrastar, criticar</td></tr>
+          <tr><td><b>Empatizar</b></td><td>se pone en el lugar de otro.</td><td>asumir un rol, imaginar, representar</td></tr>
+          <tr><td><b>Autoconocimiento</b></td><td>reconoce lo que sabe y lo que le falta.</td><td>reflexionar, autoevaluar, reconocer</td></tr>
+        </tbody></table></div>
+    </div>
+    <div class="checkpoint" data-sec="etapas"></div>
+  </section>
+
+  <!-- EJEMPLO -->
+  <section class="view" id="v-ejemplo" hidden>
+    <div class="intro">
+      <span class="eyebrow">Ejemplo resuelto · Ciencias Naturales 6° básico · Unidad 1</span>
+      <h2>La fotosíntesis diseñada en inversa</h2>
+      <p>Modelo de referencia para replicar en otras asignaturas. El OA se cita textual desde el Currículum Nacional; los demás componentes son una propuesta de diseño.</p>
+    </div>
+
+    <div class="oa">
+      <span class="code">CN06 OA 01 · Eje Ciencias de la vida</span>
+      <p>Explicar, a partir de una investigación experimental, los requerimientos de agua, dióxido de carbono y energía lumínica para la producción de azúcar y liberación de oxígeno en la fotosíntesis, comunicando sus resultados y los aportes de científicos en este campo a través del tiempo.</p>
+      <a class="note" href="https://www.curriculumnacional.cl/portal/Ejes/Ciencias-Naturales/Ciencias-de-la-Vida/18490:CN06-OA-01" target="_blank" rel="noopener">Ver OA e indicadores en curriculumnacional.cl</a>
+    </div>
+
+    <div class="stage">
+      <div class="stage-num">1</div>
+      <div class="stage-body">
+        <h3>Resultados deseados</h3>
+        <div class="kv">
+          <div><b>Meta de transferencia</b><span>Usar evidencia experimental para explicar y resolver un problema real de crecimiento de plantas en su entorno.</span></div>
+          <div><b>Comprensiones duraderas</b><span>Las plantas producen su propio alimento solo si disponen de agua, dióxido de carbono y luz. La ciencia avanza acumulando evidencia a lo largo del tiempo.</span></div>
+          <div><b>Preguntas esenciales</b><span>¿De dónde obtiene una planta lo que necesita para crecer? ¿Cómo sabemos que algo es cierto en ciencias?</span></div>
+          <div><b>Conocimientos y habilidades</b><span>Organismos fotosintéticos; requerimientos y productos de la fotosíntesis. Formular predicciones, controlar variables, registrar y comunicar resultados.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-num">2</div>
+      <div class="stage-body">
+        <h3>Evidencia</h3>
+        <div class="panel" style="background:var(--sunk);border:0">
+          <span class="eyebrow">Tarea de desempeño (GRASPS)</span>
+          <p style="color:var(--ink)"><b>Asesores del huerto escolar.</b> Las lechugas del sector sombreado del huerto crecen menos (<b>S</b>). Como equipo de asesores científicos (<b>R</b>), deben averiguar por qué y proponer una solución (<b>G</b>) a la dirección del colegio (<b>A</b>). Diseñan y ejecutan un experimento con una variable controlada y presentan un informe breve con resultados, explicación y recomendación (<b>P</b>), evaluado con la rúbrica (<b>S</b>).</p>
+        </div>
+        <div class="tbl"><table>
+          <thead><tr><th>Criterio</th><th>Logrado (3)</th><th>En desarrollo (2)</th><th>Inicial (1)</th></tr></thead>
+          <tbody>
+            <tr><td><b>Predicción</b></td><td>Formula una predicción que nombra la variable y el efecto esperado.</td><td>Formula una predicción que nombra solo la variable o solo el efecto.</td><td>No formula predicción o no se relaciona con el problema.</td></tr>
+            <tr><td><b>Diseño experimental</b></td><td>Cambia una sola variable y mantiene iguales al menos otras dos.</td><td>Cambia una variable, pero mantiene igual solo una de las demás.</td><td>Cambia más de una variable a la vez.</td></tr>
+            <tr><td><b>Registro</b></td><td>Registra datos en tabla con al menos 3 mediciones fechadas.</td><td>Registra 1 o 2 mediciones o sin fecha.</td><td>No registra datos.</td></tr>
+            <tr><td><b>Explicación</b></td><td>Menciona agua, dióxido de carbono y luz, y los relaciona con la producción de azúcar y oxígeno.</td><td>Menciona 2 de los 3 requerimientos o no los relaciona con los productos.</td><td>Menciona 1 requerimiento o ninguno.</td></tr>
+            <tr><td><b>Recomendación</b></td><td>Propone una solución que se desprende de sus resultados.</td><td>Propone una solución sin vincularla a sus resultados.</td><td>No propone solución.</td></tr>
+          </tbody></table></div>
+        <p class="note">Otras evidencias de uso formativo: ticket de salida sobre requerimientos (clase 2), predicción escrita antes del experimento (clase 3) y lectura breve sobre el aporte de Jan Baptista van Helmont con dos preguntas (clase 5).</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-num">3</div>
+      <div class="stage-body">
+        <h3>Plan de aprendizaje</h3>
+        <div class="tbl"><table>
+          <thead><tr><th>Clase</th><th>Actividad</th><th>WHERETO</th><th>DUA</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Fotos del huerto: plantas al sol y a la sombra. Se presentan la pregunta esencial, la tarea final y la rúbrica.</td><td><span class="tag">W</span><span class="tag">H</span></td><td>Representación: imagen, texto y explicación oral.</td></tr>
+            <tr><td>2</td><td>Modelado del proceso con esquema de entradas y salidas. Ticket de salida.</td><td><span class="tag">E</span></td><td>Esquema con apoyo visual y glosario.</td></tr>
+            <tr><td>3–4</td><td>Diseño y montaje del experimento en equipos (luz / sin luz; agua / sin agua).</td><td><span class="tag">E</span><span class="tag">O</span></td><td>Roles definidos en el equipo; guía paso a paso opcional.</td></tr>
+            <tr><td>5</td><td>Registro de datos y lectura sobre van Helmont: cómo se construye evidencia en la historia de la ciencia.</td><td><span class="tag">E</span><span class="tag">R</span></td><td>Texto con dos niveles de complejidad.</td></tr>
+            <tr><td>6</td><td>Borrador del informe con retroalimentación docente usando la rúbrica.</td><td><span class="tag">R</span><span class="tag">E</span></td><td>Informe escrito, audio o infografía.</td></tr>
+            <tr><td>7</td><td>Presentación de recomendaciones a la "dirección" y autoevaluación.</td><td><span class="tag">E</span><span class="tag">T</span></td><td>Compromiso: audiencia real y problema del propio colegio.</td></tr>
+          </tbody></table></div>
+        <p class="note">Ajuste el número de clases a las horas de su plan de estudios. Para estudiantes PIE, las adecuaciones se definen según su PACI (Decretos 83 y 170).</p>
+      </div>
+    </div>
+    <div class="checkpoint" data-sec="ejemplo"></div>
+  </section>
+
+  <!-- RECURSOS -->
+  <section class="view" id="v-recursos" hidden>
+    <div class="intro">
+      <span class="eyebrow">Para ver y leer</span>
+      <h2>Videos y recursos</h2>
+      <p>Los enlaces se abren en una pestaña nueva.</p>
+    </div>
+    <a class="video" href="https://www.youtube.com/watch?v=E7cXS6u2QcQ" target="_blank" rel="noopener">
+      <div class="video-thumb" aria-hidden="true"></div>
+      <div class="video-info">
+        <span class="eyebrow">Video recomendado por la Red</span>
+        <h3>Planificación inversa: introducción al modelo</h3>
+        <p style="color:var(--ink-2)">Véalo antes de pasar a los juegos. Pregunta para anotar mientras lo ve: ¿qué cambiaría en mi próxima unidad si decidiera primero la evaluación?</p>
+        <span class="note">Abrir en YouTube</span>
+      </div>
+    </a>
+    <div class="res-list">
+      <a href="https://www.curriculumnacional.cl/portal/Ejes/Ciencias-Naturales/Ciencias-de-la-Vida/18490:CN06-OA-01" target="_blank" rel="noopener"><span class="kind">Currículum</span><div><b>Currículum Nacional MINEDUC</b><p>Fuente oficial de los OA e indicadores por nivel. Toda Etapa 1 parte desde aquí.</p></div></a>
+      <a href="https://www.ascd.org/el/articles/seven-keys-to-effective-feedback" target="_blank" rel="noopener"><span class="kind">Artículo</span><div><b>Seven Keys to Effective Feedback · G. Wiggins</b><p>Texto citado en la presentación de la Red sobre retroalimentación efectiva (en inglés).</p></div></a>
+      <a href="https://www.ascd.org/books/understanding-by-design-expanded-2nd-edition" target="_blank" rel="noopener"><span class="kind">Libro</span><div><b>Understanding by Design · Wiggins y McTighe</b><p>Obra original del modelo, con plantillas de unidad y las seis facetas de la comprensión.</p></div></a>
+    </div>
+    <blockquote class="quote">Empezar con el fin en mente significa comenzar con una comprensión clara de tu destino: saber a dónde vas para entender dónde estás ahora y dar los pasos en la dirección correcta.
+      <cite>Stephen R. Covey, Los 7 hábitos de la gente altamente efectiva (1989)</cite></blockquote>
+    <div class="checkpoint" data-sec="recursos"></div>
+  </section>
+
+  <!-- JUEGOS -->
+  <section class="view" id="v-juegos" hidden>
+    <div class="intro">
+      <span class="eyebrow">Practicar para comprender</span>
+      <h2>Juegos de diseño</h2>
+      <p>Cinco desafíos cortos. Cada juego vale 8 puntos, en proporción a tus respuestas correctas; se conserva tu mejor intento. En total, los juegos aportan 40 de los 100 puntos.</p>
+    </div>
+    <div class="badge-line"><span class="eyebrow">Puntaje en juegos</span><span class="level" id="gamePts">0 / 40</span><span class="note" id="gameLeft"></span></div>
+    <div class="games-menu" id="gamesMenu"></div>
+    <div class="table" id="gameTable"></div>
+  </section>
+
+  <!-- RESULTADO -->
+  <section class="view" id="v-resultado" hidden>
+    <div class="intro">
+      <span class="eyebrow">Tu recorrido</span>
+      <h2>Resultado y medalla</h2>
+      <p>Completa las cinco secciones para obtener tu categoría final. Cada sección suma puntos hasta un total de 100.</p>
+    </div>
+    <div class="result">
+      <div class="medal-card" id="medalCard"></div>
+      <div style="display:grid;gap:24px;min-width:0">
+        <div class="tbl"><table>
+          <thead><tr><th>Sección</th><th>Estado</th><th>Puntaje</th><th>Avance</th></tr></thead>
+          <tbody id="secRows"></tbody></table></div>
+        <div class="tbl"><table class="scale">
+          <thead><tr><th>Categoría</th><th>Rango de puntaje</th><th>Descripción</th></tr></thead>
+          <tbody id="scaleRows"></tbody></table></div>
+        <div class="confirm">
+          <button class="btn ghost small" id="resetAll">Reiniciar recorrido</button>
+          <span id="resetAsk" hidden>¿Borrar todo tu avance? <button class="btn small" id="resetYes">Sí, reiniciar</button> <button class="btn ghost small" id="resetNo">Cancelar</button></span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- CLASE EN TRES TIEMPOS -->
+  <section class="view" id="v-clase" hidden>
+    <div class="intro">
+      <span class="eyebrow">Formato de la Red · Clase invertida</span>
+      <h2>Tres tiempos, una meta: diseña tu clase</h2>
+      <p>Organiza la clase en lo que el estudiante hace antes, durante y después del encuentro presencial. Cada campo tiene sugerencias desplegables como punto de partida.</p>
+    </div>
+    <div class="panel" style="background:var(--sunk);border:0">
+      <p style="color:var(--ink)"><b>Inversa e invertida se complementan.</b> La planificación inversa define qué deben lograr los estudiantes y cómo lo demostrarán. La clase invertida organiza en qué momento ocurre cada parte del aprendizaje. Completa este formato después de tener claras las Etapas 1 y 2.</p>
+    </div>
+    <form id="kform" autocomplete="off" style="display:grid;gap:24px">
+      <div class="panel">
+        <span class="eyebrow">Planificación clase a clase</span>
+        <div class="plan-grid">
+          <div class="field"><label for="k-asig">Asignatura</label><input type="text" id="k-asig"></div>
+          <div class="field"><label for="k-curso">Curso</label><input type="text" id="k-curso"></div>
+          <div class="field"><label for="k-unidad">Unidad</label><input type="text" id="k-unidad"></div>
+          <div class="field"><label for="k-tiempo">Tiempo total</label><input type="text" id="k-tiempo"></div>
+          <div class="field wide"><label for="k-oa">OA</label><textarea id="k-oa" rows="2"></textarea></div>
+        </div>
+      </div>
+      <div class="moment"><div class="moment-head"><h3>Antes</h3><span>Trabajo autónomo</span></div><div class="moment-body"><div class="moment-col"><label for="k-antes-act">Actividades pedagógicas</label><textarea id="k-antes-act" rows="5"></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Video explicativo de 5 a 8 minutos.</li><li>Lectura guiada de páginas acotadas del texto (p. ej., pág. 12–15).</li><li>Formulario con 3 preguntas breves.</li></ul></details></div><div class="moment-col"><label for="k-antes-rec">Recursos y herramientas</label><textarea id="k-antes-rec" rows="5"></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Plataforma o YouTube.</li><li>Google Forms o cuestionario.</li></ul></details></div><div class="moment-col"><label for="k-antes-evi">Evidencias y evaluación</label><textarea id="k-antes-evi" rows="5"></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Respuestas del cuestionario previo, enviadas 24 horas antes de la clase.</li></ul></details></div></div></div>
+<div class="moment"><div class="moment-head"><h3>Durante</h3><span>Activo y presencial</span></div><div class="moment-body"><div class="moment-col"><label for="k-durante-act">Actividades pedagógicas</label><textarea id="k-durante-act" rows="5"></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Inicio: aclaración de dudas clave (10 min).</li><li>Desarrollo: resolución de problemas en parejas (30 min).</li><li>Cierre: puesta en común y síntesis (10 min).</li></ul></details></div><div class="moment-col"><label for="k-durante-rec">Recursos y herramientas</label><textarea id="k-durante-rec" rows="5"></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Guía de trabajo en aula.</li><li>Pizarra o material concreto.</li></ul></details></div><div class="moment-col"><label for="k-durante-evi">Evidencias y evaluación</label><textarea id="k-durante-evi" rows="5"></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Guía resuelta en grupo.</li><li>Ticket de salida o autoevaluación.</li></ul></details></div></div></div>
+<div class="moment"><div class="moment-head"><h3>Después</h3><span>Consolidación</span></div><div class="moment-body"><div class="moment-col"><label for="k-despues-act">Actividades pedagógicas</label><textarea id="k-despues-act" rows="5"></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Actividad de extensión o reflexión final.</li><li>Revisión de la retroalimentación en plataforma.</li></ul></details></div><div class="moment-col"><label for="k-despues-rec">Recursos y herramientas</label><textarea id="k-despues-rec" rows="5"></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Portafolio digital.</li><li>Foro de discusión.</li></ul></details></div><div class="moment-col"><label for="k-despues-evi">Evidencias y evaluación</label><textarea id="k-despues-evi" rows="5"></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Entrega de producto final o informe breve.</li></ul></details></div></div></div>
+
+      <div class="panel">
+        <span class="eyebrow">Checklist docente</span>
+        <div class="cl"><label><input type="checkbox" id="kc0"><span>El OA está copiado textual del Programa de Estudio y corresponde a la unidad.</span></label><label><input type="checkbox" id="kc1"><span>La actividad del "Antes" dura 15 minutos o menos y puede realizarse sin ayuda.</span></label><label><input type="checkbox" id="kc2"><span>El "Durante" usa las respuestas del cuestionario previo para decidir qué aclarar.</span></label><label><input type="checkbox" id="kc3"><span>Cada momento tiene al menos una evidencia de aprendizaje registrada.</span></label><label><input type="checkbox" id="kc4"><span>El cierre incluye una síntesis o ticket de salida vinculado al OA.</span></label><label><input type="checkbox" id="kc5"><span>Existe una alternativa para estudiantes sin conexión a internet en el "Antes".</span></label><label><input type="checkbox" id="kc6"><span>Se ofrecen al menos 2 formas de representación o de expresión (DUA).</span></label><label><input type="checkbox" id="kc7"><span>La retroalimentación del "Después" se entrega antes de la siguiente clase.</span></label></div>
+      </div>
+      <div class="row-btns">
+        <button type="button" class="btn" id="kCopy">Copiar planificación</button>
+        <button type="button" class="btn ghost" id="kClear">Vaciar formato</button>
+        <span id="kAsk" hidden>¿Vaciar todos los campos? <button type="button" class="btn small" id="kYes">Sí, vaciar</button> <button type="button" class="btn small ghost" id="kNo">Cancelar</button></span>
+        <span class="toast" id="kToast" aria-live="polite"></span>
+      </div>
+      <textarea id="kFallback" rows="8" hidden aria-label="Texto para copiar"></textarea>
+      <div class="share" id="share">
+        <div><span class="eyebrow">Descargar y enviar</span><h3>Lleva tu planificación contigo</h3></div>
+        <div class="share-grid">
+          <div>
+            <b>Descargar en PDF</b>
+            <p class="note">Genera un PDF con los datos generales, los tres momentos y el checklist docente.</p>
+            <div><button type="button" class="btn" id="pdfBtn">Descargar PDF</button></div>
+            <span class="status" id="pdfStatus" aria-live="polite"></span>
+          </div>
+          <div>
+            <b>Enviar por correo</b>
+            <div class="field"><label for="mailTo">Correo del destinatario</label><input type="text" id="mailTo" inputmode="email" placeholder="utp@colegio.cl"></div>
+            <div class="field"><label for="mailSubj">Asunto</label><input type="text" id="mailSubj"></div>
+            <div class="row-btns"><a class="btn" id="mailBtn" href="mailto:" target="_blank" rel="noopener">Abrir en mi correo</a><button type="button" class="btn ghost" id="mailCopy">Copiar texto del correo</button></div>
+            <span class="status" id="mailStatus" aria-live="polite"></span>
+            <p class="note">El botón abre tu aplicación de correo con el texto de la planificación. Si no se abre, usa "Copiar texto del correo" y pégalo en un correo nuevo. Para adjuntar el PDF, descárgalo primero y agrégalo como archivo.</p>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+  const S = {get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+  const $ = s=>document.querySelector(s);
+  const esc = t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- Ingreso ---------- */
+  const sel=$('#colegio'), enter=$('#enter');
+  sel.addEventListener('change',()=>{enter.disabled=!sel.value});
+  function openApp(school){
+    $('#schoolName').textContent=school;
+    $('#welcome').hidden=true; $('#app').hidden=false; window.scrollTo(0,0);
+  }
+  enter.addEventListener('click',()=>{S.set('pi_school',sel.value);openApp(sel.value)});
+  $('#changeSchool').addEventListener('click',()=>{$('#app').hidden=true;$('#welcome').hidden=false;sel.value=S.get('pi_school','');enter.disabled=!sel.value});
+  const saved=S.get('pi_school',''); if(saved){sel.value=saved;enter.disabled=false}
+
+  /* ---------- Pestañas ---------- */
+  const tabs=[...document.querySelectorAll('nav.tabs button')];
+  function show(v){
+    tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.view===v));
+    document.querySelectorAll('section.view').forEach(s=>s.hidden=s.id!=='v-'+v);
+    S.set('pi_tab',v); window.scrollTo({top:0});
+  }
+  tabs.forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
+  const hash=(location.hash||'').slice(1); const valid=v=>tabs.some(t=>t.dataset.view===v); const st=S.get('pi_tab','fundamentos'); show(valid(hash)?hash:valid(st)?st:'fundamentos');
+
+  /* ---------- Puntaje ---------- */
+  let progress=S.get('pi_games',{});   // {gameId:{correct:n}}
+  let checks=S.get('pi_checks',{});    // {sec:{q0:true/false, self:true}}
+  const PTS_Q=5, PTS_GAME=8;
+  const CATS=[
+    {min:85,name:'Destacado',color:'var(--gold)',desc:'Domina el modelo y lo aplica con precisión en todas las etapas.'},
+    {min:65,name:'Competente',color:'var(--silver)',desc:'Comprende el modelo y lo aplica con errores puntuales.'},
+    {min:45,name:'Básico',color:'var(--bronze)',desc:'Reconoce las etapas, pero con dificultades para alinear meta, evidencia y actividades.'},
+    {min:0,name:'Insatisfactorio',color:'var(--iron)',desc:'Requiere revisar los fundamentos antes de aplicar el modelo.'}];
+  const catOf=t=>CATS.find(c=>t>=c.min);
+  /* ---------- Datos de juegos ---------- */
+  const GAMES=[
+    {id:'etapas',name:'Clasifica por etapa',desc:'Ubica cada elemento en la etapa del diseño a la que pertenece.',type:'sort',
+     bins:['Etapa 1 · Resultados','Etapa 2 · Evidencia','Etapa 3 · Actividades'],
+     items:[['Pregunta esencial',0],['Comprensión duradera',0],['OA del Programa',0],['Meta de transferencia',0],
+            ['Rúbrica con criterios observables',1],['Tarea de desempeño GRASPS',1],['Ticket de salida',1],['Autoevaluación con pauta',1],
+            ['Modelado del procedimiento',2],['Trabajo en equipos con roles',2],['Secuencia de clases',2],['Lectura guiada con andamiaje',2]]},
+    {id:'tvi',name:'¿Tradicional o inversa?',desc:'Decide qué enfoque describe cada decisión docente.',type:'quiz',
+     qs:[
+      ['Busco una actividad entretenida sobre fracciones y después veo qué evaluar.','Tradicional','Se parte de la actividad; la evaluación queda al final.'],
+      ['Antes de planificar la primera clase, redacto la rúbrica de la tarea final.','Inversa','La evidencia se define antes que las actividades.'],
+      ['Elijo el capítulo del texto y lo sigo en orden, página por página.','Tradicional','El texto define la secuencia, no la meta de aprendizaje.'],
+      ['Me pregunto qué debe poder hacer el estudiante solo al terminar la unidad.','Inversa','Es la pregunta de la Etapa 1: meta de transferencia.'],
+      ['Diseño la prueba la semana antes de aplicarla, con lo que alcancé a pasar.','Tradicional','La evaluación depende de lo cubierto, no del OA.'],
+      ['Cada actividad de la secuencia prepara un criterio de la rúbrica.','Inversa','Es la coherencia entre Etapa 2 y Etapa 3.'],
+      ['Comparto los criterios de logro con el curso el primer día de la unidad.','Inversa','Da claridad sobre lo esperado, como pide el Decreto 67.'],
+      ['Planifico 8 actividades y al final agrego una prueba de alternativas.','Tradicional','La evidencia se agrega al final sin vínculo previo.']
+     ].map(q=>({t:q[0],opts:['Tradicional','Inversa'],a:q[1],why:q[2]}))},
+    {id:'facetas',name:'Las seis facetas',desc:'Asocia cada evidencia con la faceta de la comprensión que muestra.',type:'match',
+     choices:['Explicar','Interpretar','Aplicar','Tener perspectiva','Empatizar','Autoconocimiento'],
+     rows:[
+      ['El estudiante justifica por qué el hielo flota usando el concepto de densidad.','Explicar'],
+      ['Lee un gráfico de lluvias y concluye qué meses fueron más secos.','Interpretar'],
+      ['Calcula cuánta pintura necesita para la sala usando el área.','Aplicar'],
+      ['Compara cómo relatan la llegada de los españoles un cronista y un mapuche.','Tener perspectiva'],
+      ['Escribe una carta como si fuera un niño obrero del salitre en 1900.','Empatizar'],
+      ['Completa: "Lo que aún no entiendo de las fracciones es…".','Autoconocimiento']
+     ]},
+    {id:'incoh',name:'Detecta la incoherencia',desc:'Encuentra el elemento que rompe la alineación de la unidad.',type:'case',
+     cases:[
+      {els:[['Meta','Que los estudiantes argumenten una opinión con al menos dos razones.'],['Evidencia','Prueba de alternativas sobre tipos de textos.'],['Actividad','Debate en parejas con turnos de habla.']],bad:1,why:'La meta pide argumentar; una prueba de alternativas no permite observar argumentación. Corresponde una producción oral o escrita con pauta.'},
+      {els:[['Meta','Que resuelvan problemas de su entorno usando fracciones.'],['Evidencia','Tarea: ajustar una receta para 12 personas y justificar los cálculos.'],['Actividad','Colorear fracciones en una ficha, sin problemas contextualizados.']],bad:2,why:'La actividad no prepara para resolver problemas contextualizados. Debe incluir práctica con situaciones similares a la tarea final.'},
+      {els:[['Meta','Que expliquen por qué se producen las estaciones del año.'],['Evidencia','Modelo con linterna y esfera, explicado oralmente con la inclinación del eje.'],['Criterio','"Presenta de forma adecuada y ordenada".']],bad:2,why:'El criterio es subjetivo. Debe ser observable, por ejemplo: "Menciona la inclinación del eje y la relaciona con la cantidad de luz recibida".'},
+      {els:[['Pregunta esencial','¿Cuál es la capital de Chile?'],['Evidencia','Mapa comentado de las regiones y sus actividades productivas.'],['Actividad','Investigación grupal por región con fichas guía.']],bad:0,why:'Una pregunta esencial es abierta y no se responde con un dato. Ejemplo: "¿Cómo influye el territorio en la forma de vida de las personas?".'}
+     ]},
+    {id:'pregunta',name:'¿Es una pregunta esencial?',desc:'Distingue preguntas esenciales de preguntas de contenido.',type:'quiz',
+     qs:[
+      ['¿Cuántos lados tiene un hexágono?','De contenido','Tiene una única respuesta y se responde con un dato.'],
+      ['¿Por qué las personas cuentan historias?','Esencial','Es abierta, admite distintas respuestas y se puede retomar toda la unidad.'],
+      ['¿Qué es un sustantivo?','De contenido','Se responde con una definición.'],
+      ['¿Qué hace que una regla sea justa?','Esencial','Invita a argumentar y conecta con la vida de los estudiantes.'],
+      ['¿En qué año llegó Colón a América?','De contenido','Es un dato puntual.'],
+      ['¿Cómo sabemos que algo es cierto en ciencias?','Esencial','Se vincula con la naturaleza de la ciencia y admite desarrollo.']
+     ].map(q=>({t:q[0],opts:['Esencial','De contenido'],a:q[1],why:q[2]}))}
+  ];
+  const CP={
+    fundamentos:{name:'Fundamentos',qs:[
+      ['¿Cuál es el orden de la planificación inversa?',['Objetivos de aprendizaje → evaluación → actividades','Actividades → objetivos de aprendizaje → evaluación','Contenidos → actividades → evaluación'],0,'Primero la meta, luego la evidencia y al final las actividades.'],
+      ['Según la presentación de la Red, comprender implica…',['Memorizar definiciones y fechas','Entender por qué es así, dar sentido a lo que sé y poder usarlo','Completar todas las actividades del texto escolar'],1,'Son las tres dimensiones de la comprensión que presenta la Red.'],
+      ['¿Por qué la planificación inversa favorece lo que plantea el Decreto 67?',['Porque aumenta la cantidad de calificaciones','Porque define criterios de logro desde el inicio y permite monitorear y ajustar','Porque elimina la evaluación sumativa'],1,'El Decreto 67 releva la evaluación formativa y la retroalimentación durante el proceso.']]},
+    etapas:{name:'Las 3 etapas',qs:[
+      ['Una comprensión duradera se redacta como…',['"Los estudiantes comprenderán que…"','"El estudiante completará la guía 3"','"Clase 1: introducción al tema"'],0,'Expresa una idea central que debe permanecer más allá de la unidad.'],
+      ['¿En qué etapa se diseña la tarea de desempeño?',['Etapa 1','Etapa 2','Etapa 3'],1,'La tarea de desempeño es evidencia; se decide antes de las actividades.'],
+      ['En el formato GRASPS, la letra "A" corresponde a…',['Actividad','Aprendizaje','Audiencia'],2,'Audiencia: para quién es el producto del estudiante.'],
+      ['Un estudiante completa "Lo que aún no entiendo es…". ¿Qué faceta evidencia?',['Explicar','Autoconocimiento','Aplicar'],1,'Reconoce lo que sabe y lo que le falta.']]},
+    ejemplo:{name:'Ejemplo resuelto',qs:[
+      ['¿Qué verbo del CN06 OA 01 guía la tarea de desempeño del ejemplo?',['Identificar','Explicar','Memorizar'],1,'El OA pide explicar a partir de una investigación experimental; la tarea exige esa explicación.'],
+      ['¿Por qué el criterio "Diseño experimental" de la rúbrica es objetivo?',['Porque usa la palabra "adecuado"','Porque lo decide el docente al final','Porque define cantidades observables: una variable cambia y al menos dos se mantienen'],2,'Un descriptor objetivo se puede verificar igual por dos observadores distintos.'],
+      ['¿En qué clase se retroalimenta el borrador antes de la versión final?',['Clase 1','Clase 6','Clase 7'],1,'La clase 6 corresponde a "Repensar" (R) del WHERETO.']]},
+    recursos:{name:'Videos y recursos',self:'Vi el video recomendado por la Red',qs:[
+      ['Según la cita de Covey, empezar con el fin en mente significa…',['Terminar la unidad antes de lo planificado','Saber hacia dónde vas para decidir los pasos desde donde estás','Aplicar la prueba final el primer día'],1,'Es el principio que da nombre al diseño inverso.']]}
+  };
+  const secMax=sec=>CP[sec].qs.length*PTS_Q+(CP[sec].self?PTS_Q:0);
+  function secPts(sec){const c=checks[sec]||{};let p=0;CP[sec].qs.forEach((q,i)=>{if(c['q'+i]===true)p+=PTS_Q});if(CP[sec].self&&c.self)p+=PTS_Q;return p}
+  function secDone(sec){const c=checks[sec]||{};return CP[sec].qs.every((q,i)=>c['q'+i]!==undefined)&&(!CP[sec].self||c.self)}
+  function gamePts(){return GAMES.reduce((a,g)=>{const p=progress[g.id];return a+(p?Math.round(p.correct/totalOf(g)*PTS_GAME):0)},0)}
+  function gamesDone(){return GAMES.every(g=>progress[g.id])}
+  function totalScore(){return Object.keys(CP).reduce((a,s)=>a+secPts(s),0)+gamePts()}
+
+  function renderCP(el){
+    const sec=el.dataset.sec, d=CP[sec], c=checks[sec]||{};
+    el.innerHTML=`<div class="cp-head"><div><span class="eyebrow">Completa la sección</span><h3>Punto de control · ${esc(d.name)}</h3></div>
+      <span class="cp-pts">${secPts(sec)} / ${secMax(sec)} pts ${secDone(sec)?'<span class="pill ok">Completada</span>':''}</span></div>
+      <p class="note">Cada respuesta vale ${PTS_Q} puntos y tiene un solo intento.</p>`+
+      (d.self?`<label class="selfcheck cp-q" style="display:flex"><input type="checkbox" id="self-${sec}" ${c.self?'checked disabled':''}> ${esc(d.self)} (+${PTS_Q} pts)</label>`:'')+
+      d.qs.map((q,i)=>{const ans=c['q'+i]; const picked=c['p'+i];
+        return `<div class="cp-q"><p>${i+1}. ${esc(q[0])}</p><div class="opts col">${q[1].map((o,k)=>{
+          let cls=''; if(ans!==undefined){if(k===q[2])cls='ok';else if(k===picked)cls='bad'}
+          return `<button class="opt ${cls}" data-q="${i}" data-k="${k}" ${ans!==undefined?'disabled':''}>${esc(o)}</button>`}).join('')}</div>
+          ${ans!==undefined?`<div class="feedback ${ans?'ok':'bad'}"><b>${ans?'Correcto.':'Incorrecto.'}</b> ${esc(q[3])}</div>`:''}</div>`}).join('')+
+      (secDone(sec)?`<div class="row-btns"><span class="cp-done">Sección completada</span><button class="btn small ghost" data-goto="resultado">Ver mi resultado</button></div>`:'');
+    el.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+      const i=+b.dataset.q,k=+b.dataset.k; checks[sec]=checks[sec]||{};
+      checks[sec]['q'+i]=(k===d.qs[i][2]); checks[sec]['p'+i]=k; S.set('pi_checks',checks); refreshScore(); renderCP(el);
+    }));
+    const sc=el.querySelector('#self-'+sec);
+    if(sc)sc.addEventListener('change',()=>{if(sc.checked){checks[sec]=checks[sec]||{};checks[sec].self=true;S.set('pi_checks',checks);refreshScore();renderCP(el)}});
+    const g=el.querySelector('[data-goto]'); if(g)g.addEventListener('click',()=>show('resultado'));
+  }
+
+  function medalSVG(color,label){
+    return `<svg viewBox="0 0 200 240" role="img" aria-label="Medalla ${esc(label)}">
+      <path d="M62 0h36l-18 92h-36z" fill="var(--accent)" opacity=".85"/>
+      <path d="M102 0h36l18 92h-36z" fill="var(--ink-2)" opacity=".85"/>
+      <circle cx="100" cy="150" r="78" fill="${color}"/>
+      <circle cx="100" cy="150" r="64" fill="none" stroke="var(--surface)" stroke-width="3" opacity=".7"/>
+      <path d="M100 104l12.9 26.2 28.9 4.2-20.9 20.4 4.9 28.8L100 170l-25.8 13.6 4.9-28.8-20.9-20.4 28.9-4.2z" fill="var(--surface)" opacity=".95"/>
+    </svg>`;
+  }
+  function renderResult(){
+    const t=totalScore(), cat=catOf(t);
+    const allDone=Object.keys(CP).every(secDone)&&gamesDone();
+    const doneCount=Object.keys(CP).filter(secDone).length+(gamesDone()?1:0);
+    $('#medalCard').innerHTML=allDone
+      ? `<span class="eyebrow">Categoría final</span>${medalSVG(cat.color,cat.name)}<div class="medal-cat">${cat.name}</div><div class="medal-pts">${t} / 100 puntos</div><p class="note">${esc(S.get('pi_school',''))}</p><p style="color:var(--ink-2)">${esc(cat.desc)}</p>`
+      : `<span class="eyebrow">Medalla pendiente</span>${medalSVG('var(--line-strong)','pendiente')}<div class="medal-cat" style="color:var(--ink-3)">${doneCount} de 5</div><div class="medal-pts">${t} / 100 puntos acumulados</div><p style="color:var(--ink-2)">Categoría provisoria: <b>${cat.name}</b>. Completa todas las secciones para recibir tu medalla.</p>`;
+    const rows=Object.keys(CP).map(s=>[CP[s].name,secDone(s),secPts(s),secMax(s)]);
+    rows.push(['Juegos',gamesDone(),gamePts(),GAMES.length*PTS_GAME]);
+    $('#secRows').innerHTML=rows.map(r=>`<tr><td><b>${esc(r[0])}</b></td><td><span class="pill ${r[1]?'ok':''}">${r[1]?'Completada':'Pendiente'}</span></td><td style="font-variant-numeric:tabular-nums">${r[2]} / ${r[3]}</td><td><div class="sec-bar"><i style="width:${r[2]/r[3]*100}%"></i></div></td></tr>`).join('')+
+      `<tr><td><b>Total</b></td><td></td><td style="font-variant-numeric:tabular-nums"><b>${t} / 100</b></td><td></td></tr>`;
+    $('#scaleRows').innerHTML=CATS.map((c,i)=>{const max=i===0?100:CATS[i-1].min-1;return `<tr class="${allDone&&c===cat?'me':''}"><td><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="${c.color}"/></svg> ${c.name}</td><td style="font-variant-numeric:tabular-nums">${c.min} – ${max}</td><td>${esc(c.desc)}</td></tr>`}).join('');
+  }
+  function refreshScore(){
+    $('#score').textContent=totalScore();
+    const gp=gamePts(); $('#gamePts').textContent=`${gp} / ${GAMES.length*PTS_GAME}`;
+    const left=GAMES.filter(g=>!progress[g.id]).length; $('#gameLeft').textContent=left?`Te faltan ${left} juego${left>1?'s':''} por completar`:'Todos los juegos completados';
+    renderMenu(); renderResult();
+  }
+  const totalOf=g=>g.type==='sort'?g.items.length:g.type==='quiz'?g.qs.length:g.type==='match'?g.rows.length:g.cases.length;
+  let current=null;
+
+  function renderMenu(){
+    const m=$('#gamesMenu'); m.innerHTML='';
+    GAMES.forEach(g=>{
+      const p=progress[g.id]||{}; const b=document.createElement('button');
+      b.className='gcard'; b.setAttribute('aria-pressed',current===g.id);
+      b.innerHTML=`<b>${esc(g.name)}</b><span>${esc(g.desc)}</span><span class="prog">${p.correct!=null?`Mejor resultado: ${p.correct}/${totalOf(g)}`:'Sin jugar'}</span>`;
+      b.addEventListener('click',()=>startGame(g.id)); m.appendChild(b);
+    });
+  }
+  function saveResult(id,correct){
+    const p=progress[id]||{}; if(p.correct==null||correct>p.correct){progress[id]={correct}; S.set('pi_games',progress)}
+    refreshScore();
+  }
+  function head(g,extra){return `<div class="table-head"><div><span class="eyebrow">Juego</span><h3>${esc(g.name)}</h3></div>${extra||''}</div>`}
+  function endScreen(g,correct){
+    saveResult(g.id,correct); const n=totalOf(g);
+    $('#gameTable').innerHTML=head(g)+`<div class="qbox"><p class="qtext">Resultado: ${correct} de ${n} correctas · ${Math.round(correct/n*PTS_GAME)} de ${PTS_GAME} puntos (se conserva tu mejor intento).</p>
+      <p style="color:var(--ink-2)">${correct===n?'Resultado completo. Prueba otro desafío.':'Revisa la sección "Las 3 etapas" y vuelve a intentarlo.'}</p>
+      <div class="row-btns"><button class="btn" id="again">Jugar de nuevo</button></div></div>`;
+    $('#again').addEventListener('click',()=>startGame(g.id));
+  }
+
+  function startGame(id){
+    current=id; renderMenu(); const g=GAMES.find(x=>x.id===id);
+    ({sort:playSort,quiz:playQuiz,match:playMatch,case:playCase})[g.type](g);
+  }
+
+  function playSort(g){
+    let pick=null; const placed=g.items.map(()=>null); let checked=false;
+    const order=g.items.map((_,i)=>i).sort(()=>Math.random()-.5);
+    function draw(){
+      const left=order.filter(i=>placed[i]===null);
+      $('#gameTable').innerHTML=head(g,`<span class="note">${g.items.length-left.length}/${g.items.length} ubicados</span>`)+
+       `<p class="note">Toca una tarjeta y luego la etapa donde corresponde. Toca una tarjeta ubicada para devolverla.</p>
+        <div class="pool">${left.map(i=>`<button class="card" data-i="${i}" aria-pressed="${pick===i}">${esc(g.items[i][0])}</button>`).join('')||'<span class="note">Todas las tarjetas están ubicadas.</span>'}</div>
+        <div class="bins">${g.bins.map((b,bi)=>`<button class="bin" data-b="${bi}"><h4>${esc(b)}</h4>${order.filter(i=>placed[i]===bi).map(i=>`<span class="placed ${checked?(g.items[i][1]===bi?'ok':'bad'):''}" data-back="${i}">${esc(g.items[i][0])}</span>`).join('')||'<small>Toca aquí para ubicar</small>'}</button>`).join('')}</div>
+        <div class="row-btns"><button class="btn" id="check" ${left.length?'disabled':''}>${checked?'Ver resultado':'Revisar'}</button></div>`;
+      document.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>{pick=+c.dataset.i;draw()}));
+      document.querySelectorAll('.bin').forEach(b=>b.addEventListener('click',e=>{
+        const back=e.target.closest('[data-back]');
+        if(back&&!checked){placed[+back.dataset.back]=null;draw();return}
+        if(pick!==null&&!checked){placed[pick]=+b.dataset.b;pick=null;draw()}
+      }));
+      $('#check').addEventListener('click',()=>{
+        if(!checked){checked=true;draw();return}
+        endScreen(g,g.items.filter((it,i)=>placed[i]===it[1]).length);
+      });
+    }
+    draw();
+  }
+
+  function playQuiz(g){
+    let i=0,correct=0; const qs=[...g.qs].sort(()=>Math.random()-.5);
+    function draw(){
+      const q=qs[i];
+      $('#gameTable').innerHTML=head(g,`<span class="note">${i+1} de ${qs.length}</span>`)+
+       `<div class="meter"><i style="width:${i/qs.length*100}%"></i></div>
+        <div class="qbox"><p class="qtext">${esc(q.t)}</p><div class="opts">${q.opts.map(o=>`<button class="opt" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div><div id="fb"></div></div>`;
+      document.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+        const ok=b.dataset.o===q.a; if(ok)correct++;
+        document.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.dataset.o===q.a)x.classList.add('ok')});
+        if(!ok)b.classList.add('bad');
+        $('#fb').innerHTML=`<div class="feedback ${ok?'ok':'bad'}"><b>${ok?'Correcto.':'No es así.'}</b> ${esc(q.why)}</div>
+          <div class="row-btns" style="margin-top:12px"><button class="btn" id="next">${i+1<qs.length?'Siguiente':'Ver resultado'}</button></div>`;
+        $('#next').addEventListener('click',()=>{i++; i<qs.length?draw():endScreen(g,correct)});
+      }));
+    }
+    draw();
+  }
+
+  function playMatch(g){
+    const rows=[...g.rows].sort(()=>Math.random()-.5);
+    $('#gameTable').innerHTML=head(g)+`<p class="note">Elige una faceta para cada evidencia. Cada faceta se usa una vez.</p>
+      <div class="match">${rows.map((r,i)=>`<div class="match-row" id="mr${i}"><span>${esc(r[0])}</span>
+        <select id="ms${i}" aria-label="Faceta"><option value="">Elegir faceta</option>${g.choices.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>`).join('')}</div>
+      <div id="fb"></div><div class="row-btns"><button class="btn" id="check">Revisar</button></div>`;
+    $('#check').addEventListener('click',function(){
+      if(this.dataset.done){endScreen(g,+this.dataset.done);return}
+      let c=0; rows.forEach((r,i)=>{const v=$('#ms'+i).value; const ok=v===r[1]; if(ok)c++;
+        $('#mr'+i).className='match-row '+(ok?'ok':'bad'); $('#ms'+i).disabled=true;
+        if(!ok)$('#mr'+i).querySelector('span').insertAdjacentHTML('beforeend',` <b>→ ${esc(r[1])}</b>`)});
+      this.dataset.done=c; this.textContent='Ver resultado';
+    });
+  }
+
+  function playCase(g){
+    let i=0,correct=0;
+    function draw(){
+      const c=g.cases[i];
+      $('#gameTable').innerHTML=head(g,`<span class="note">Caso ${i+1} de ${g.cases.length}</span>`)+
+       `<div class="meter"><i style="width:${i/g.cases.length*100}%"></i></div>
+        <p class="qtext">¿Qué elemento rompe la coherencia de esta unidad?</p>
+        <div class="case">${c.els.map((e,k)=>`<button class="case-el" data-k="${k}"><b>${esc(e[0])}</b><span>${esc(e[1])}</span></button>`).join('')}</div><div id="fb"></div>`;
+      document.querySelectorAll('.case-el').forEach(b=>b.addEventListener('click',()=>{
+        const k=+b.dataset.k, ok=k===c.bad; if(ok)correct++;
+        document.querySelectorAll('.case-el').forEach(x=>{x.disabled=true;if(+x.dataset.k===c.bad)x.classList.add(ok?'ok':'bad')});
+        $('#fb').innerHTML=`<div class="feedback ${ok?'ok':'bad'}"><b>${ok?'Correcto.':'El elemento incoherente era "'+esc(c.els[c.bad][0])+'".'}</b> ${esc(c.why)}</div>
+          <div class="row-btns" style="margin-top:12px"><button class="btn" id="next">${i+1<g.cases.length?'Siguiente caso':'Ver resultado'}</button></div>`;
+        $('#next').addEventListener('click',()=>{i++; i<g.cases.length?draw():endScreen(g,correct)});
+      }));
+    }
+    draw();
+  }
+
+  document.querySelectorAll('.checkpoint').forEach(renderCP);
+  refreshScore(); startGame('etapas');
+
+  $('#resetAll').addEventListener('click',()=>{$('#resetAsk').hidden=false});
+  $('#resetNo').addEventListener('click',()=>{$('#resetAsk').hidden=true});
+  $('#resetYes').addEventListener('click',()=>{progress={};checks={};S.set('pi_games',{});S.set('pi_checks',{});$('#resetAsk').hidden=true;document.querySelectorAll('.checkpoint').forEach(renderCP);refreshScore();startGame('etapas')});
+
+  /* ---------- Mi clase en tres tiempos ---------- */
+  const KF=[...document.querySelectorAll('#kform input[type=text], #kform textarea:not(#kFallback)')];
+  const KC=[...document.querySelectorAll('#kform input[type=checkbox]')];
+  const kd=S.get('pi_clase',{});
+  KF.forEach(el=>{if(kd[el.id]!=null)el.value=kd[el.id]}); KC.forEach(el=>{if(kd[el.id]!=null)el.checked=kd[el.id]});
+  const kSave=()=>{const d={};KF.forEach(el=>d[el.id]=el.value);KC.forEach(el=>d[el.id]=el.checked);S.set('pi_clase',d)};
+  KF.concat(KC).forEach(el=>el.addEventListener('input',kSave));
+  const kToast=t=>{$('#kToast').textContent=t;setTimeout(()=>$('#kToast').textContent='',3000)};
+  function kText(){
+    const v=id=>document.getElementById(id).value.trim()||'—';
+    const mom=[['antes','ANTES (trabajo autónomo)'],['durante','DURANTE (activo y presencial)'],['despues','DESPUÉS (consolidación)']];
+    const cl=KC.map(c=>`[${c.checked?'x':' '}] ${c.nextElementSibling.textContent}`).join('\n');
+    return `PLANIFICACIÓN CLASE A CLASE · ${S.get('pi_school','')}\nAsignatura: ${v('k-asig')}\nCurso: ${v('k-curso')}\nUnidad: ${v('k-unidad')}\nTiempo total: ${v('k-tiempo')}\nOA: ${v('k-oa')}\n\n`+
+      mom.map(([id,t])=>`${t}\nActividades pedagógicas: ${v('k-'+id+'-act')}\nRecursos y herramientas: ${v('k-'+id+'-rec')}\nEvidencias y evaluación: ${v('k-'+id+'-evi')}`).join('\n\n')+`\n\nCHECKLIST DOCENTE\n${cl}`;
+  }
+  $('#kCopy').addEventListener('click',()=>{
+    const t=kText(), fb=$('#kFallback');
+    const fallback=()=>{fb.hidden=false;fb.value=t;fb.focus();fb.select();kToast('Selecciona el texto y cópialo con Ctrl+C.')};
+    try{navigator.clipboard.writeText(t).then(()=>{fb.hidden=true;kToast('Planificación copiada.')},fallback)}catch(e){fallback()}
+  });
+  $('#kClear').addEventListener('click',()=>{$('#kAsk').hidden=false});
+  $('#kNo').addEventListener('click',()=>{$('#kAsk').hidden=true});
+  $('#kYes').addEventListener('click',()=>{KF.forEach(el=>el.value='');KC.forEach(el=>el.checked=false);kSave();$('#kAsk').hidden=true;kToast('Formato vaciado.')});
+
+  /* ---------- PDF y correo ---------- */
+  const val=id=>document.getElementById(id).value.trim();
+  function buildPDF(){
+    const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4'});
+    const W=doc.internal.pageSize.getWidth(), M=14; let y=18;
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.text('Planificación clase a clase',M,y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(110);
+    doc.text(`Red Básica · Planificación Inversa · ${S.get('pi_school','')}`,M,y+6);
+    doc.text(new Date().toLocaleDateString('es-CL'),W-M,y+6,{align:'right'}); doc.setTextColor(0);
+    const base={styles:{font:'helvetica',fontSize:9.5,cellPadding:2.4,lineColor:[210,210,205],lineWidth:.2,textColor:[29,31,33],valign:'top'},headStyles:{fillColor:[52,73,90],textColor:255,fontStyle:'bold'},margin:{left:M,right:M}};
+    doc.autoTable({...base,startY:y+11,theme:'grid',body:[
+      ['Asignatura',val('k-asig')||'—','Curso',val('k-curso')||'—'],
+      ['Unidad',val('k-unidad')||'—','Tiempo total',val('k-tiempo')||'—'],
+      [{content:'OA',styles:{fontStyle:'bold',fillColor:[243,243,241]}},{content:val('k-oa')||'—',colSpan:3}]],
+      columnStyles:{0:{fontStyle:'bold',fillColor:[243,243,241],cellWidth:28},2:{fontStyle:'bold',fillColor:[243,243,241],cellWidth:28}}});
+    const mom=[['antes','Antes','Trabajo autónomo'],['durante','Durante','Activo y presencial'],['despues','Después','Consolidación']];
+    doc.autoTable({...base,startY:doc.lastAutoTable.finalY+6,theme:'grid',
+      head:[['Momento','Actividades pedagógicas','Recursos y herramientas','Evidencias y evaluación']],
+      body:mom.map(([id,n,sub])=>[`${n}\n(${sub})`,val('k-'+id+'-act')||'—',val('k-'+id+'-rec')||'—',val('k-'+id+'-evi')||'—']),
+      columnStyles:{0:{fontStyle:'bold',cellWidth:30,fillColor:[243,243,241]}}});
+    doc.autoTable({...base,startY:doc.lastAutoTable.finalY+6,theme:'grid',head:[['','Checklist docente']],
+      body:KC.map(c=>[c.checked?'Sí':'No',c.nextElementSibling.textContent]),columnStyles:{0:{cellWidth:14,halign:'center',fontStyle:'bold'}}});
+    const pages=doc.getNumberOfPages();
+    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(140);doc.text(`Página ${i} de ${pages}`,W-M,doc.internal.pageSize.getHeight()-8,{align:'right'})}
+    return doc;
+  }
+  let downloads=null;
+  if(window.claude&&window.claude.use){window.claude.use('downloads').then(d=>{downloads=d}).catch(()=>{})}
+  $('#pdfBtn').addEventListener('click',async()=>{
+    const st=$('#pdfStatus'); st.className='status'; st.textContent='';
+    if(!window.jspdf){st.className='status bad';st.textContent='No se pudo cargar el generador de PDF. Revisa tu conexión y recarga la página.';return}
+    const name=('Planificacion '+[val('k-asig'),val('k-curso')].filter(Boolean).join(' ')).trim().replace(/[\\/:*?"<>|]/g,'')+'.pdf';
+    try{const doc=buildPDF(); if(downloads){await downloads.save({filename:name,data:doc.output('blob')})}else{doc.save(name)} st.className='status ok';st.textContent='PDF descargado.'}
+    catch(e){st.className='status bad';
+      st.textContent=e&&e.code==='declined'?'Descarga cancelada.':e&&e.code==='rate_limited'?'Ya hay una descarga pendiente. Confírmala o espera unos segundos.':'No se pudo descargar el PDF. Intenta nuevamente.'}
+  });
+  function mailSubject(){return val('mailSubj')||('Planificación '+[val('k-asig'),val('k-curso'),val('k-unidad')].filter(Boolean).join(' · '))}
+  function mailBody(){return 'Junto con saludar, comparto la planificación de clase elaborada con el formato de la Red Básica.\n\n'+kText()+'\n\nSaludos cordiales.'}
+  function updateMail(){
+    if(!val('mailSubj'))$('#mailSubj').placeholder=mailSubject();
+    $('#mailBtn').href='mailto:'+encodeURIComponent(val('mailTo'))+'?subject='+encodeURIComponent(mailSubject())+'&body='+encodeURIComponent(mailBody());
+  }
+  ['mailTo','mailSubj'].forEach(id=>document.getElementById(id).addEventListener('input',updateMail));
+  KF.concat(KC).forEach(el=>el.addEventListener('input',updateMail));
+  $('#mailBtn').addEventListener('click',e=>{
+    const to=val('mailTo'), st=$('#mailStatus'); updateMail();
+    if(to&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)){e.preventDefault();st.className='status bad';st.textContent='Revisa el correo del destinatario: debe tener el formato nombre@dominio.cl.';return}
+    st.className='status';st.textContent='Si tu aplicación de correo no se abrió, copia el texto y pégalo en un correo nuevo.';
+  });
+  $('#mailCopy').addEventListener('click',()=>{
+    const t=`Para: ${val('mailTo')||'—'}\nAsunto: ${mailSubject()}\n\n${mailBody()}`, st=$('#mailStatus'), fb=$('#kFallback');
+    const fallback=()=>{fb.hidden=false;fb.value=t;fb.focus();fb.select();st.className='status';st.textContent='Selecciona el texto y cópialo con Ctrl+C.'};
+    try{navigator.clipboard.writeText(t).then(()=>{st.className='status ok';st.textContent='Texto del correo copiado.'},fallback)}catch(e){fallback()}
+  });
+  updateMail();
+})();
+</script>
+
+</body>
+</html>
