@@ -72,7 +72,7 @@ select.big{width:100%;padding:.85rem 1rem;border:1px solid var(--line-strong);bo
 .linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;padding:0;font-size:.88rem}
 nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
 nav.tabs::-webkit-scrollbar{display:none}
-nav.tabs button{white-space:nowrap;background:none;border:0;border-bottom:2px solid transparent;padding:.6rem .8rem;color:var(--ink-2);font-weight:600}
+nav.tabs button{white-space:nowrap;background:none;border:0;border-bottom:2px solid transparent;padding:.6rem .7rem;color:var(--ink-2);font-weight:600}
 nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
 section.view{padding-top:36px;display:grid;gap:36px}
 .intro{display:grid;gap:12px;max-width:70ch}
@@ -297,6 +297,29 @@ input[type=date]{width:100%;border:1px solid var(--line-strong);border-radius:8p
 .strip-logo:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
 .strip-logo[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
 .strip:has([aria-pressed="true"]) .strip-logo:not([aria-pressed="true"]){opacity:.55}
+
+.video-up{border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface);padding:20px;display:grid;gap:14px}
+.vu-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:760px){.vu-grid{grid-template-columns:1fr}}
+.vu-preview{aspect-ratio:16/9;max-width:100%;border-radius:10px;background:var(--sunk);display:grid;place-items:center;overflow:hidden;text-align:center;padding:0}
+.vu-preview .note{padding:16px}
+.vu-preview .vframe{height:100%}
+
+.bar-head,.bar-row2{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:center}
+.bar-head{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding-bottom:4px;border-bottom:1px solid var(--line)}
+.bar-row2{font-size:.92rem;padding:5px 0}
+.bar-row2 .bn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink-2)}
+.bar-row2.me .bn{color:var(--ink);font-weight:700}
+.bcell{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:10px;align-items:center}
+.bcell .bt{height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
+.bcell .bt i{display:block;height:100%;width:0;border-radius:5px;transition:width .6s ease}
+.bcell.plan .bt i{background:var(--accent)}
+.bcell.vid .bt i{background:var(--ink-3)}
+.bcell .bv{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.bcell.zero .bv{color:var(--ink-3)}
+.legend{display:inline-flex;gap:8px;align-items:center;font-size:.85rem;color:var(--ink-2)}
+.lg{display:inline-block;width:12px;height:12px;border-radius:3px}.lg.plan{background:var(--accent)}.lg.vid{background:var(--ink-3);margin-left:8px}
+@media (max-width:620px){.bar-head{display:none}.bar-row2{grid-template-columns:1fr;gap:4px;padding:8px 0;border-bottom:1px solid var(--line)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <style>html,body{height:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
@@ -348,7 +371,6 @@ input[type=date]{width:100%;border:1px solid var(--line-strong);border-radius:8p
       <div class="brand"><span class="eyebrow">Red Básica - MINEDUC</span><b>Planificación Inversa</b></div>
       <div class="chips">
         <span class="chip"><span class="logo sm" id="hLogo"></span><span id="schoolName">—</span> <button class="linkbtn" id="changeSchool">cambiar</button></span>
-        <span class="chip score">Puntaje <b id="score">0</b>/100</span>
       </div>
     </div>
     <nav class="tabs" role="tablist" aria-label="Secciones">
@@ -356,9 +378,8 @@ input[type=date]{width:100%;border:1px solid var(--line-strong);border-radius:8p
       <button role="tab" data-view="etapas">Las 3 etapas</button>
       <button role="tab" data-view="ejemplo">Ejemplo resuelto</button>
       <button role="tab" data-view="recursos">Videos y recursos</button>
-      <button role="tab" data-view="juegos">Juegos</button>
-      <button role="tab" data-view="resultado">Resultado</button>
-      <button role="tab" data-view="clase">Mi clase en tres tiempos</button>
+      <button role="tab" data-view="clase">📥 Planifica Aquí</button>
+      <button role="tab" data-view="red">📊 Participación</button>
     </nav>
   </header>
 
@@ -600,39 +621,22 @@ input[type=date]{width:100%;border:1px solid var(--line-strong);border-radius:8p
     <div class="checkpoint" data-sec="recursos"></div>
   </section>
 
-  <!-- JUEGOS -->
-  <section class="view" id="v-juegos" hidden>
-    <div class="intro">
-      <span class="eyebrow">Practicar para comprender</span>
-      <h2>Juegos de diseño</h2>
-      <p>Cinco desafíos cortos. Cada juego vale 8 puntos, en proporción a tus respuestas correctas; se conserva tu mejor intento. En total, los juegos aportan 40 de los 100 puntos.</p>
-    </div>
-    <div class="badge-line"><span class="eyebrow">Puntaje en juegos</span><span class="level" id="gamePts">0 / 40</span><span class="note" id="gameLeft"></span></div>
-    <div class="games-menu" id="gamesMenu"></div>
-    <div class="table" id="gameTable"></div>
-  </section>
 
-  <!-- RESULTADO -->
-  <section class="view" id="v-resultado" hidden>
+  <!-- PARTICIPACIÓN DE LA RED -->
+  <section class="view" id="v-red" hidden>
     <div class="intro">
-      <span class="eyebrow">Tu recorrido</span>
-      <h2>Resultado y medalla</h2>
-      <p>Completa las cinco secciones para obtener tu categoría final. Cada sección suma puntos hasta un total de 100.</p>
+      <span class="eyebrow">Red Básica - MINEDUC</span>
+      <h2>Participación de la Red</h2>
+      <p>Planificaciones y videos de clase subidos por cada colegio desde "📥 Planifica Aquí". Solo se muestran cantidades por colegio.</p>
     </div>
-    <div class="result">
-      <div class="medal-card" id="medalCard"></div>
-      <div style="display:grid;gap:24px;min-width:0">
-        <div class="tbl"><table>
-          <thead><tr><th>Sección</th><th>Estado</th><th>Puntaje</th><th>Avance</th></tr></thead>
-          <tbody id="secRows"></tbody></table></div>
-        <div class="tbl"><table class="scale">
-          <thead><tr><th>Categoría</th><th>Rango de puntaje</th><th>Descripción</th></tr></thead>
-          <tbody id="scaleRows"></tbody></table></div>
-        <div class="confirm">
-          <button class="btn ghost small" id="resetAll">Reiniciar recorrido</button>
-          <span id="resetAsk" hidden>¿Borrar todo tu avance? <button class="btn small" id="resetYes">Sí, reiniciar</button> <button class="btn ghost small" id="resetNo">Cancelar</button></span>
-        </div>
+    <div class="counter" id="counter" aria-live="polite">
+      <div class="counter-kpis">
+        <div><b id="cTotal">—</b><span>planificaciones</span></div>
+        <div><b id="cVideos">—</b><span>videos de clase</span></div>
+        <div><b id="cSchools">—</b><span>colegios participando</span></div>
       </div>
+      <div class="bars" id="cBars"></div>
+      <div class="counter-foot"><span class="legend"><i class="lg plan"></i>Planificaciones <i class="lg vid"></i>Videos</span><span class="note" id="cNote"></span><button type="button" class="linkbtn" id="cRefresh">Actualizar</button></div>
     </div>
   </section>
   <!-- CLASE EN TRES TIEMPOS -->
@@ -644,17 +648,6 @@ input[type=date]{width:100%;border:1px solid var(--line-strong);border-radius:8p
     </div>
     <div class="panel" style="background:var(--sunk);border:0">
       <p style="color:var(--ink)"><b>Inversa e invertida se complementan.</b> La planificación inversa define qué deben lograr los estudiantes y cómo lo demostrarán. La clase invertida organiza en qué momento ocurre cada parte del aprendizaje. Completa este formato después de tener claras las Etapas 1 y 2.</p>
-    </div>
-    <div class="counter" id="counter" aria-live="polite">
-      <div class="counter-head">
-        <div><span class="eyebrow">Participación de la Red</span><h3>Planificaciones subidas por colegio</h3></div>
-        <div class="counter-kpis">
-          <div><b id="cTotal">—</b><span>planificaciones</span></div>
-          <div><b id="cSchools">—</b><span>colegios participando</span></div>
-        </div>
-      </div>
-      <div class="bars" id="cBars"></div>
-      <div class="counter-foot"><span class="note" id="cNote"></span><button type="button" class="linkbtn" id="cRefresh">Actualizar</button></div>
     </div>
     <form id="kform" autocomplete="off" style="display:grid;gap:24px">
       <div class="panel">
@@ -668,6 +661,26 @@ input[type=date]{width:100%;border:1px solid var(--line-strong);border-radius:8p
         <details class="sug"><summary>Ver orientación para "Actividades y estrategias"</summary><ul><li>Definir el tipo de actividades y el modo de enseñar para que los estudiantes logren realizar lo que les pediremos.</li><li>Registrar un listado de actividades.</li></ul></details>
       </div>
       <div class="moment"><div class="moment-head"><h3>Antes de la clase</h3><span>Aprendizaje autónomo individual</span></div><div class="moment-body"><div class="moment-col"><label for="k-antes-act">Actividades y estrategias</label><textarea id="k-antes-act" rows="5" data-pf></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Revisión de material audiovisual o lecturas previas.</li><li>Responder cuestionarios breves de control de comprensión.</li><li>Anotar dudas o conceptos difíciles.</li></ul></details></div><div class="moment-col"><label for="k-antes-rec">Recursos y materiales</label><textarea id="k-antes-rec" rows="5" data-pf></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Videos interactivos.</li><li>Lecturas.</li><li>Enlaces web.</li><li>Cuestionarios en línea.</li></ul></details></div><div class="moment-col"><label for="k-antes-evi">Evidencia / evaluación</label><textarea id="k-antes-evi" rows="5" data-pf></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Reporte de respuestas del cuestionario.</li><li>Notas individuales.</li><li>Evaluación diagnóstica inicial.</li></ul></details></div></div></div>
+<div class="video-up" id="videoUp">
+        <div class="cp-head"><div><span class="eyebrow">Antes de la clase · Recurso del docente</span><h3>🎬 Video de la clase</h3>
+        <p class="note">Pega aquí el enlace del video de YouTube que creaste para el trabajo autónomo de tus estudiantes.</p></div></div>
+        <div class="vu-grid">
+          <div style="display:grid;gap:12px;min-width:0">
+            <div class="field"><label for="k-video-url">Enlace de YouTube</label><input type="text" id="k-video-url" inputmode="url" placeholder="https://youtu.be/… o https://www.youtube.com/watch?v=…" data-pf></div>
+            <div class="field"><label for="k-video-titulo">Título del video</label><input type="text" id="k-video-titulo" placeholder="Ej.: ¿Qué necesita una planta para fabricar su alimento?" data-pf></div>
+            <span class="status" id="videoStatus" aria-live="polite"></span>
+            <details class="sug"><summary>Ver orientación para crear y subir el video</summary><ul>
+              <li>Duración sugerida: entre 5 y 8 minutos, centrado en el objetivo de la clase.</li>
+              <li>Presenta al inicio qué aprenderán y termina con una pregunta que se retome en la clase.</li>
+              <li>En YouTube: <b>Crear → Subir video</b>. En "Visibilidad" elige <b>No listado</b>: solo lo verá quien tenga el enlace.</li>
+              <li>Audiencia: si el video está dirigido a estudiantes de básica, marca <b>"Sí, es contenido creado para niños"</b>.</li>
+              <li>Copia el enlace con el botón <b>Compartir → Copiar</b> y pégalo en el campo de arriba.</li>
+              <li>Considera subtítulos o una transcripción breve para apoyar la diversidad (DUA).</li>
+            </ul></details>
+          </div>
+          <div class="vu-preview" id="videoPreview"><span class="note">La vista previa aparecerá aquí al pegar un enlace válido.</span></div>
+        </div>
+      </div>
 <div class="moment"><div class="moment-head"><h3>Durante la clase</h3><span>Colectivo, práctico y colaborativo</span></div><div class="moment-body"><div class="moment-col"><label for="k-durante-act">Actividades y estrategias</label><textarea id="k-durante-act" rows="5" data-pf></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Resolución de dudas recurrentes detectadas en la fase previa.</li><li>Aprendizaje basado en problemas (ABP) o estudio de casos.</li><li>Debates, talleres grupales o experimentos prácticos.</li><li>Retroalimentación inmediata del docente.</li></ul></details></div><div class="moment-col"><label for="k-durante-rec">Recursos y materiales</label><textarea id="k-durante-rec" rows="5" data-pf></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Guías de trabajo escrito.</li><li>Pizarras digitales.</li><li>Material didáctico físico.</li><li>Herramientas de gamificación.</li></ul></details></div><div class="moment-col"><label for="k-durante-evi">Evidencia / evaluación</label><textarea id="k-durante-evi" rows="5" data-pf></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Desempeño en el taller.</li><li>Rúbrica de trabajo colaborativo.</li><li>Coevaluación entre pares.</li></ul></details></div></div></div>
 <div class="moment"><div class="moment-head"><h3>Después de la clase</h3><span>Transferencia y profundización</span></div><div class="moment-body"><div class="moment-col"><label for="k-despues-act">Actividades y estrategias</label><textarea id="k-despues-act" rows="5" data-pf></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Aplicación de lo aprendido en proyectos a largo plazo.</li><li>Actividades de extensión o investigación.</li><li>Autoevaluación del proceso de aprendizaje estudiantil.</li></ul></details></div><div class="moment-col"><label for="k-despues-rec">Recursos y materiales</label><textarea id="k-despues-rec" rows="5" data-pf></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Plataformas (Moodle o Teams).</li><li>Portafolio digital.</li><li>Rúbricas de evaluación.</li></ul></details></div><div class="moment-col"><label for="k-despues-evi">Evidencia / evaluación</label><textarea id="k-despues-evi" rows="5" data-pf></textarea><details class="sug"><summary>Ver sugerencias</summary><ul><li>Producto final del proyecto.</li><li>Bitácora de metacognición.</li><li>Autoevaluación formal.</li></ul></details></div></div></div>
 
@@ -782,61 +795,8 @@ const VIDEOS = [
   tabs.forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
   const hash=(location.hash||'').slice(1); const valid=v=>tabs.some(t=>t.dataset.view===v); const st=S.get('pi_tab','fundamentos'); show(valid(hash)?hash:valid(st)?st:'fundamentos');
 
-  /* ---------- Puntaje ---------- */
-  let progress=S.get('pi_games',{});   // {gameId:{correct:n}}
-  let checks=S.get('pi_checks',{});    // {sec:{q0:true/false, self:true}}
-  const PTS_Q=5, PTS_GAME=8;
-  const CATS=[
-    {min:85,name:'Destacado',color:'var(--gold)',desc:'Domina el modelo y lo aplica con precisión en todas las etapas.'},
-    {min:65,name:'Competente',color:'var(--silver)',desc:'Comprende el modelo y lo aplica con errores puntuales.'},
-    {min:45,name:'Básico',color:'var(--bronze)',desc:'Reconoce las etapas, pero con dificultades para alinear meta, evidencia y actividades.'},
-    {min:0,name:'Insatisfactorio',color:'var(--iron)',desc:'Requiere revisar los fundamentos antes de aplicar el modelo.'}];
-  const catOf=t=>CATS.find(c=>t>=c.min);
-  /* ---------- Datos de juegos ---------- */
-  const GAMES=[
-    {id:'etapas',name:'Clasifica por etapa',desc:'Ubica cada elemento en la etapa del diseño a la que pertenece.',type:'sort',
-     bins:['Etapa 1 · Resultados','Etapa 2 · Evidencia','Etapa 3 · Actividades'],
-     items:[['Pregunta esencial',0],['Comprensión duradera',0],['OA del Programa',0],['Meta de transferencia',0],
-            ['Rúbrica con criterios observables',1],['Tarea de desempeño GRASPS',1],['Ticket de salida',1],['Autoevaluación con pauta',1],
-            ['Modelado del procedimiento',2],['Trabajo en equipos con roles',2],['Secuencia de clases',2],['Lectura guiada con andamiaje',2]]},
-    {id:'tvi',name:'¿Tradicional o inversa?',desc:'Decide qué enfoque describe cada decisión docente.',type:'quiz',
-     qs:[
-      ['Busco una actividad entretenida sobre fracciones y después veo qué evaluar.','Tradicional','Se parte de la actividad; la evaluación queda al final.'],
-      ['Antes de planificar la primera clase, redacto la rúbrica de la tarea final.','Inversa','La evidencia se define antes que las actividades.'],
-      ['Elijo el capítulo del texto y lo sigo en orden, página por página.','Tradicional','El texto define la secuencia, no la meta de aprendizaje.'],
-      ['Me pregunto qué debe poder hacer el estudiante solo al terminar la unidad.','Inversa','Es la pregunta de la Etapa 1: meta de transferencia.'],
-      ['Diseño la prueba la semana antes de aplicarla, con lo que alcancé a pasar.','Tradicional','La evaluación depende de lo cubierto, no del OA.'],
-      ['Cada actividad de la secuencia prepara un criterio de la rúbrica.','Inversa','Es la coherencia entre Etapa 2 y Etapa 3.'],
-      ['Comparto los criterios de logro con el curso el primer día de la unidad.','Inversa','Da claridad sobre lo esperado, como pide el Decreto 67.'],
-      ['Planifico 8 actividades y al final agrego una prueba de alternativas.','Tradicional','La evidencia se agrega al final sin vínculo previo.']
-     ].map(q=>({t:q[0],opts:['Tradicional','Inversa'],a:q[1],why:q[2]}))},
-    {id:'facetas',name:'Las seis facetas',desc:'Asocia cada evidencia con la faceta de la comprensión que muestra.',type:'match',
-     choices:['Explicar','Interpretar','Aplicar','Tener perspectiva','Empatizar','Autoconocimiento'],
-     rows:[
-      ['El estudiante justifica por qué el hielo flota usando el concepto de densidad.','Explicar'],
-      ['Lee un gráfico de lluvias y concluye qué meses fueron más secos.','Interpretar'],
-      ['Calcula cuánta pintura necesita para la sala usando el área.','Aplicar'],
-      ['Compara cómo relatan la llegada de los españoles un cronista y un mapuche.','Tener perspectiva'],
-      ['Escribe una carta como si fuera un niño obrero del salitre en 1900.','Empatizar'],
-      ['Completa: "Lo que aún no entiendo de las fracciones es…".','Autoconocimiento']
-     ]},
-    {id:'incoh',name:'Detecta la incoherencia',desc:'Encuentra el elemento que rompe la alineación de la unidad.',type:'case',
-     cases:[
-      {els:[['Meta','Que los estudiantes argumenten una opinión con al menos dos razones.'],['Evidencia','Prueba de alternativas sobre tipos de textos.'],['Actividad','Debate en parejas con turnos de habla.']],bad:1,why:'La meta pide argumentar; una prueba de alternativas no permite observar argumentación. Corresponde una producción oral o escrita con pauta.'},
-      {els:[['Meta','Que resuelvan problemas de su entorno usando fracciones.'],['Evidencia','Tarea: ajustar una receta para 12 personas y justificar los cálculos.'],['Actividad','Colorear fracciones en una ficha, sin problemas contextualizados.']],bad:2,why:'La actividad no prepara para resolver problemas contextualizados. Debe incluir práctica con situaciones similares a la tarea final.'},
-      {els:[['Meta','Que expliquen por qué se producen las estaciones del año.'],['Evidencia','Modelo con linterna y esfera, explicado oralmente con la inclinación del eje.'],['Criterio','"Presenta de forma adecuada y ordenada".']],bad:2,why:'El criterio es subjetivo. Debe ser observable, por ejemplo: "Menciona la inclinación del eje y la relaciona con la cantidad de luz recibida".'},
-      {els:[['Pregunta esencial','¿Cuál es la capital de Chile?'],['Evidencia','Mapa comentado de las regiones y sus actividades productivas.'],['Actividad','Investigación grupal por región con fichas guía.']],bad:0,why:'Una pregunta esencial es abierta y no se responde con un dato. Ejemplo: "¿Cómo influye el territorio en la forma de vida de las personas?".'}
-     ]},
-    {id:'pregunta',name:'¿Es una pregunta esencial?',desc:'Distingue preguntas esenciales de preguntas de contenido.',type:'quiz',
-     qs:[
-      ['¿Cuántos lados tiene un hexágono?','De contenido','Tiene una única respuesta y se responde con un dato.'],
-      ['¿Por qué las personas cuentan historias?','Esencial','Es abierta, admite distintas respuestas y se puede retomar toda la unidad.'],
-      ['¿Qué es un sustantivo?','De contenido','Se responde con una definición.'],
-      ['¿Qué hace que una regla sea justa?','Esencial','Invita a argumentar y conecta con la vida de los estudiantes.'],
-      ['¿En qué año llegó Colón a América?','De contenido','Es un dato puntual.'],
-      ['¿Cómo sabemos que algo es cierto en ciencias?','Esencial','Se vincula con la naturaleza de la ciencia y admite desarrollo.']
-     ].map(q=>({t:q[0],opts:['Esencial','De contenido'],a:q[1],why:q[2]}))}
-  ];
+  /* ---------- Comprueba tu comprensión ---------- */
+  let checks=S.get('pi_checks',{});    // {sec:{q0:true/false, p0:n, self:true}}
   const CP={
     fundamentos:{name:'Fundamentos',qs:[
       ['¿Cuál es el orden de la planificación inversa?',['Objetivos de aprendizaje → evaluación → actividades','Actividades → objetivos de aprendizaje → evaluación','Contenidos → actividades → evaluación'],0,'Primero la meta, luego la evidencia y al final las actividades.'],
@@ -854,175 +814,29 @@ const VIDEOS = [
     recursos:{name:'Videos y recursos',self:'Vi los videos recomendados por la Red',qs:[
       ['Según la cita de Covey, empezar con el fin en mente significa…',['Terminar la unidad antes de lo planificado','Saber hacia dónde vas para decidir los pasos desde donde estás','Aplicar la prueba final el primer día'],1,'Es el principio que da nombre al diseño inverso.']]}
   };
-  const secMax=sec=>CP[sec].qs.length*PTS_Q+(CP[sec].self?PTS_Q:0);
-  function secPts(sec){const c=checks[sec]||{};let p=0;CP[sec].qs.forEach((q,i)=>{if(c['q'+i]===true)p+=PTS_Q});if(CP[sec].self&&c.self)p+=PTS_Q;return p}
   function secDone(sec){const c=checks[sec]||{};return CP[sec].qs.every((q,i)=>c['q'+i]!==undefined)&&(!CP[sec].self||c.self)}
-  function gamePts(){return GAMES.reduce((a,g)=>{const p=progress[g.id];return a+(p?Math.round(p.correct/totalOf(g)*PTS_GAME):0)},0)}
-  function gamesDone(){return GAMES.every(g=>progress[g.id])}
-  function totalScore(){return Object.keys(CP).reduce((a,s)=>a+secPts(s),0)+gamePts()}
-
   function renderCP(el){
     const sec=el.dataset.sec, d=CP[sec], c=checks[sec]||{};
-    el.innerHTML=`<div class="cp-head"><div><span class="eyebrow">Completa la sección</span><h3>Punto de control · ${esc(d.name)}</h3></div>
-      <span class="cp-pts">${secPts(sec)} / ${secMax(sec)} pts ${secDone(sec)?'<span class="pill ok">Completada</span>':''}</span></div>
-      <p class="note">Cada respuesta vale ${PTS_Q} puntos y tiene un solo intento.</p>`+
-      (d.self?`<label class="selfcheck cp-q" style="display:flex"><input type="checkbox" id="self-${sec}" ${c.self?'checked disabled':''}> ${esc(d.self)} (+${PTS_Q} pts)</label>`:'')+
+    const ok=d.qs.filter((q,i)=>c['q'+i]===true).length, answered=d.qs.filter((q,i)=>c['q'+i]!==undefined).length;
+    el.innerHTML=`<div class="cp-head"><div><span class="eyebrow">Repaso de la sección</span><h3>Comprueba tu comprensión · ${esc(d.name)}</h3></div>
+      <span class="cp-pts">${answered?`${ok} de ${d.qs.length} correctas`:''} ${secDone(sec)?'<span class="pill ok">Completada</span>':''}</span></div>`+
+      (d.self?`<label class="selfcheck cp-q" style="display:flex"><input type="checkbox" id="self-${sec}" ${c.self?'checked':''}> ${esc(d.self)}</label>`:'')+
       d.qs.map((q,i)=>{const ans=c['q'+i]; const picked=c['p'+i];
         return `<div class="cp-q"><p>${i+1}. ${esc(q[0])}</p><div class="opts col">${q[1].map((o,k)=>{
           let cls=''; if(ans!==undefined){if(k===q[2])cls='ok';else if(k===picked)cls='bad'}
           return `<button class="opt ${cls}" data-q="${i}" data-k="${k}" ${ans!==undefined?'disabled':''}>${esc(o)}</button>`}).join('')}</div>
           ${ans!==undefined?`<div class="feedback ${ans?'ok':'bad'}"><b>${ans?'Correcto.':'Incorrecto.'}</b> ${esc(q[3])}</div>`:''}</div>`}).join('')+
-      (secDone(sec)?`<div class="row-btns"><span class="cp-done">Sección completada</span><button class="btn small ghost" data-goto="resultado">Ver mi resultado</button></div>`:'');
+      (answered?`<div class="row-btns"><button class="btn small ghost" data-retry>Responder de nuevo</button></div>`:'');
     el.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
       const i=+b.dataset.q,k=+b.dataset.k; checks[sec]=checks[sec]||{};
-      checks[sec]['q'+i]=(k===d.qs[i][2]); checks[sec]['p'+i]=k; S.set('pi_checks',checks); refreshScore(); renderCP(el);
+      checks[sec]['q'+i]=(k===d.qs[i][2]); checks[sec]['p'+i]=k; S.set('pi_checks',checks); renderCP(el);
     }));
     const sc=el.querySelector('#self-'+sec);
-    if(sc)sc.addEventListener('change',()=>{if(sc.checked){checks[sec]=checks[sec]||{};checks[sec].self=true;S.set('pi_checks',checks);refreshScore();renderCP(el)}});
-    const g=el.querySelector('[data-goto]'); if(g)g.addEventListener('click',()=>show('resultado'));
+    if(sc)sc.addEventListener('change',()=>{checks[sec]=checks[sec]||{};checks[sec].self=sc.checked;S.set('pi_checks',checks);renderCP(el)});
+    const r=el.querySelector('[data-retry]');
+    if(r)r.addEventListener('click',()=>{const keep=(checks[sec]||{}).self;checks[sec]=keep?{self:true}:{};S.set('pi_checks',checks);renderCP(el)});
   }
-
-  function medalSVG(color,label){
-    return `<svg viewBox="0 0 200 240" role="img" aria-label="Medalla ${esc(label)}">
-      <path d="M62 0h36l-18 92h-36z" fill="var(--accent)" opacity=".85"/>
-      <path d="M102 0h36l18 92h-36z" fill="var(--ink-2)" opacity=".85"/>
-      <circle cx="100" cy="150" r="78" fill="${color}"/>
-      <circle cx="100" cy="150" r="64" fill="none" stroke="var(--surface)" stroke-width="3" opacity=".7"/>
-      <path d="M100 104l12.9 26.2 28.9 4.2-20.9 20.4 4.9 28.8L100 170l-25.8 13.6 4.9-28.8-20.9-20.4 28.9-4.2z" fill="var(--surface)" opacity=".95"/>
-    </svg>`;
-  }
-  function renderResult(){
-    const t=totalScore(), cat=catOf(t);
-    const allDone=Object.keys(CP).every(secDone)&&gamesDone();
-    const doneCount=Object.keys(CP).filter(secDone).length+(gamesDone()?1:0);
-    $('#medalCard').innerHTML=allDone
-      ? `<span class="eyebrow">Categoría final</span>${medalSVG(cat.color,cat.name)}<div class="medal-cat">${cat.name}</div><div class="medal-pts">${t} / 100 puntos</div><p class="note">${esc(S.get('pi_school',''))}</p><p style="color:var(--ink-2)">${esc(cat.desc)}</p>`
-      : `<span class="eyebrow">Medalla pendiente</span>${medalSVG('var(--line-strong)','pendiente')}<div class="medal-cat" style="color:var(--ink-3)">${doneCount} de 5</div><div class="medal-pts">${t} / 100 puntos acumulados</div><p style="color:var(--ink-2)">Categoría provisoria: <b>${cat.name}</b>. Completa todas las secciones para recibir tu medalla.</p>`;
-    const rows=Object.keys(CP).map(s=>[CP[s].name,secDone(s),secPts(s),secMax(s)]);
-    rows.push(['Juegos',gamesDone(),gamePts(),GAMES.length*PTS_GAME]);
-    $('#secRows').innerHTML=rows.map(r=>`<tr><td><b>${esc(r[0])}</b></td><td><span class="pill ${r[1]?'ok':''}">${r[1]?'Completada':'Pendiente'}</span></td><td style="font-variant-numeric:tabular-nums">${r[2]} / ${r[3]}</td><td><div class="sec-bar"><i style="width:${r[2]/r[3]*100}%"></i></div></td></tr>`).join('')+
-      `<tr><td><b>Total</b></td><td></td><td style="font-variant-numeric:tabular-nums"><b>${t} / 100</b></td><td></td></tr>`;
-    $('#scaleRows').innerHTML=CATS.map((c,i)=>{const max=i===0?100:CATS[i-1].min-1;return `<tr class="${allDone&&c===cat?'me':''}"><td><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="${c.color}"/></svg> ${c.name}</td><td style="font-variant-numeric:tabular-nums">${c.min} – ${max}</td><td>${esc(c.desc)}</td></tr>`}).join('');
-  }
-  function refreshScore(){
-    $('#score').textContent=totalScore();
-    const gp=gamePts(); $('#gamePts').textContent=`${gp} / ${GAMES.length*PTS_GAME}`;
-    const left=GAMES.filter(g=>!progress[g.id]).length; $('#gameLeft').textContent=left?`Te faltan ${left} juego${left>1?'s':''} por completar`:'Todos los juegos completados';
-    renderMenu(); renderResult();
-  }
-  const totalOf=g=>g.type==='sort'?g.items.length:g.type==='quiz'?g.qs.length:g.type==='match'?g.rows.length:g.cases.length;
-  let current=null;
-
-  function renderMenu(){
-    const m=$('#gamesMenu'); m.innerHTML='';
-    GAMES.forEach(g=>{
-      const p=progress[g.id]||{}; const b=document.createElement('button');
-      b.className='gcard'; b.setAttribute('aria-pressed',current===g.id);
-      b.innerHTML=`<b>${esc(g.name)}</b><span>${esc(g.desc)}</span><span class="prog">${p.correct!=null?`Mejor resultado: ${p.correct}/${totalOf(g)}`:'Sin jugar'}</span>`;
-      b.addEventListener('click',()=>startGame(g.id)); m.appendChild(b);
-    });
-  }
-  function saveResult(id,correct){
-    const p=progress[id]||{}; if(p.correct==null||correct>p.correct){progress[id]={correct}; S.set('pi_games',progress)}
-    refreshScore();
-  }
-  function head(g,extra){return `<div class="table-head"><div><span class="eyebrow">Juego</span><h3>${esc(g.name)}</h3></div>${extra||''}</div>`}
-  function endScreen(g,correct){
-    saveResult(g.id,correct); const n=totalOf(g);
-    $('#gameTable').innerHTML=head(g)+`<div class="qbox"><p class="qtext">Resultado: ${correct} de ${n} correctas · ${Math.round(correct/n*PTS_GAME)} de ${PTS_GAME} puntos (se conserva tu mejor intento).</p>
-      <p style="color:var(--ink-2)">${correct===n?'Resultado completo. Prueba otro desafío.':'Revisa la sección "Las 3 etapas" y vuelve a intentarlo.'}</p>
-      <div class="row-btns"><button class="btn" id="again">Jugar de nuevo</button></div></div>`;
-    $('#again').addEventListener('click',()=>startGame(g.id));
-  }
-
-  function startGame(id){
-    current=id; renderMenu(); const g=GAMES.find(x=>x.id===id);
-    ({sort:playSort,quiz:playQuiz,match:playMatch,case:playCase})[g.type](g);
-  }
-
-  function playSort(g){
-    let pick=null; const placed=g.items.map(()=>null); let checked=false;
-    const order=g.items.map((_,i)=>i).sort(()=>Math.random()-.5);
-    function draw(){
-      const left=order.filter(i=>placed[i]===null);
-      $('#gameTable').innerHTML=head(g,`<span class="note">${g.items.length-left.length}/${g.items.length} ubicados</span>`)+
-       `<p class="note">Toca una tarjeta y luego la etapa donde corresponde. Toca una tarjeta ubicada para devolverla.</p>
-        <div class="pool">${left.map(i=>`<button class="card" data-i="${i}" aria-pressed="${pick===i}">${esc(g.items[i][0])}</button>`).join('')||'<span class="note">Todas las tarjetas están ubicadas.</span>'}</div>
-        <div class="bins">${g.bins.map((b,bi)=>`<button class="bin" data-b="${bi}"><h4>${esc(b)}</h4>${order.filter(i=>placed[i]===bi).map(i=>`<span class="placed ${checked?(g.items[i][1]===bi?'ok':'bad'):''}" data-back="${i}">${esc(g.items[i][0])}</span>`).join('')||'<small>Toca aquí para ubicar</small>'}</button>`).join('')}</div>
-        <div class="row-btns"><button class="btn" id="check" ${left.length?'disabled':''}>${checked?'Ver resultado':'Revisar'}</button></div>`;
-      document.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>{pick=+c.dataset.i;draw()}));
-      document.querySelectorAll('.bin').forEach(b=>b.addEventListener('click',e=>{
-        const back=e.target.closest('[data-back]');
-        if(back&&!checked){placed[+back.dataset.back]=null;draw();return}
-        if(pick!==null&&!checked){placed[pick]=+b.dataset.b;pick=null;draw()}
-      }));
-      $('#check').addEventListener('click',()=>{
-        if(!checked){checked=true;draw();return}
-        endScreen(g,g.items.filter((it,i)=>placed[i]===it[1]).length);
-      });
-    }
-    draw();
-  }
-
-  function playQuiz(g){
-    let i=0,correct=0; const qs=[...g.qs].sort(()=>Math.random()-.5);
-    function draw(){
-      const q=qs[i];
-      $('#gameTable').innerHTML=head(g,`<span class="note">${i+1} de ${qs.length}</span>`)+
-       `<div class="meter"><i style="width:${i/qs.length*100}%"></i></div>
-        <div class="qbox"><p class="qtext">${esc(q.t)}</p><div class="opts">${q.opts.map(o=>`<button class="opt" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div><div id="fb"></div></div>`;
-      document.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
-        const ok=b.dataset.o===q.a; if(ok)correct++;
-        document.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.dataset.o===q.a)x.classList.add('ok')});
-        if(!ok)b.classList.add('bad');
-        $('#fb').innerHTML=`<div class="feedback ${ok?'ok':'bad'}"><b>${ok?'Correcto.':'No es así.'}</b> ${esc(q.why)}</div>
-          <div class="row-btns" style="margin-top:12px"><button class="btn" id="next">${i+1<qs.length?'Siguiente':'Ver resultado'}</button></div>`;
-        $('#next').addEventListener('click',()=>{i++; i<qs.length?draw():endScreen(g,correct)});
-      }));
-    }
-    draw();
-  }
-
-  function playMatch(g){
-    const rows=[...g.rows].sort(()=>Math.random()-.5);
-    $('#gameTable').innerHTML=head(g)+`<p class="note">Elige una faceta para cada evidencia. Cada faceta se usa una vez.</p>
-      <div class="match">${rows.map((r,i)=>`<div class="match-row" id="mr${i}"><span>${esc(r[0])}</span>
-        <select id="ms${i}" aria-label="Faceta"><option value="">Elegir faceta</option>${g.choices.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>`).join('')}</div>
-      <div id="fb"></div><div class="row-btns"><button class="btn" id="check">Revisar</button></div>`;
-    $('#check').addEventListener('click',function(){
-      if(this.dataset.done){endScreen(g,+this.dataset.done);return}
-      let c=0; rows.forEach((r,i)=>{const v=$('#ms'+i).value; const ok=v===r[1]; if(ok)c++;
-        $('#mr'+i).className='match-row '+(ok?'ok':'bad'); $('#ms'+i).disabled=true;
-        if(!ok)$('#mr'+i).querySelector('span').insertAdjacentHTML('beforeend',` <b>→ ${esc(r[1])}</b>`)});
-      this.dataset.done=c; this.textContent='Ver resultado';
-    });
-  }
-
-  function playCase(g){
-    let i=0,correct=0;
-    function draw(){
-      const c=g.cases[i];
-      $('#gameTable').innerHTML=head(g,`<span class="note">Caso ${i+1} de ${g.cases.length}</span>`)+
-       `<div class="meter"><i style="width:${i/g.cases.length*100}%"></i></div>
-        <p class="qtext">¿Qué elemento rompe la coherencia de esta unidad?</p>
-        <div class="case">${c.els.map((e,k)=>`<button class="case-el" data-k="${k}"><b>${esc(e[0])}</b><span>${esc(e[1])}</span></button>`).join('')}</div><div id="fb"></div>`;
-      document.querySelectorAll('.case-el').forEach(b=>b.addEventListener('click',()=>{
-        const k=+b.dataset.k, ok=k===c.bad; if(ok)correct++;
-        document.querySelectorAll('.case-el').forEach(x=>{x.disabled=true;if(+x.dataset.k===c.bad)x.classList.add(ok?'ok':'bad')});
-        $('#fb').innerHTML=`<div class="feedback ${ok?'ok':'bad'}"><b>${ok?'Correcto.':'El elemento incoherente era "'+esc(c.els[c.bad][0])+'".'}</b> ${esc(c.why)}</div>
-          <div class="row-btns" style="margin-top:12px"><button class="btn" id="next">${i+1<g.cases.length?'Siguiente caso':'Ver resultado'}</button></div>`;
-        $('#next').addEventListener('click',()=>{i++; i<g.cases.length?draw():endScreen(g,correct)});
-      }));
-    }
-    draw();
-  }
-
   document.querySelectorAll('.checkpoint').forEach(renderCP);
-  refreshScore(); startGame('etapas');
-
-  $('#resetAll').addEventListener('click',()=>{$('#resetAsk').hidden=false});
-  $('#resetNo').addEventListener('click',()=>{$('#resetAsk').hidden=true});
-  $('#resetYes').addEventListener('click',()=>{progress={};checks={};S.set('pi_games',{});S.set('pi_checks',{});$('#resetAsk').hidden=true;document.querySelectorAll('.checkpoint').forEach(renderCP);refreshScore();startGame('etapas')});
 
   /* ---------- Videos ---------- */
   const ytId=u=>{const m=String(u).match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/);return m?m[1]:null};
@@ -1035,11 +849,23 @@ const VIDEOS = [
     b.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${b.dataset.yt}?autoplay=1&rel=0" title="Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
   }));
 
+  /* ---------- Video de la clase (docente) ---------- */
+  function updateVideo(){
+    const u=$('#k-video-url').value.trim(), st=$('#videoStatus'), pv=$('#videoPreview'), id=u?ytId(u):null;
+    if(!u){st.className='status';st.textContent='';pv.innerHTML='<span class="note">La vista previa aparecerá aquí al pegar un enlace válido.</span>';return}
+    if(!id){st.className='status bad';st.textContent='El enlace no corresponde a un video de YouTube. Cópialo desde Compartir → Copiar.';pv.innerHTML='<span class="note">Sin vista previa.</span>';return}
+    st.className='status ok';st.textContent='Enlace válido.';
+    if(pv.dataset.id===id)return; pv.dataset.id=id;
+    pv.innerHTML=`<button type="button" class="vframe" data-yt="${id}" aria-label="Reproducir video de la clase"><img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt=""></button>`;
+    const b=pv.querySelector('.vframe'); b.addEventListener('click',()=>{if(b.classList.contains('playing'))return;b.classList.add('playing');b.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="Video de la clase" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`});
+  }
+  $('#k-video-url').addEventListener('input',updateVideo);
+
   /* ---------- Formato de planificación invertida ---------- */
   const KF=[...document.querySelectorAll('[data-pf]')];
   const val=id=>document.getElementById(id).value.trim();
   const kd=S.get('pi_clase',{});
-  KF.forEach(el=>{if(kd[el.id]!=null)el.value=kd[el.id]});
+  KF.forEach(el=>{if(kd[el.id]!=null)el.value=kd[el.id]}); updateVideo();
   const correoEl=$('#k-correo'); correoEl.value=S.get('pi_correo','');
   correoEl.addEventListener('input',()=>S.set('pi_correo',correoEl.value.trim()));
   const formData=()=>{const d={};KF.forEach(el=>d[el.id]=el.value);return d};
@@ -1051,7 +877,7 @@ const VIDEOS = [
   function kText(){
     const v=id=>val(id)||'—';
     return `FORMATO DE PLANIFICACIÓN INVERTIDA · ${S.get('pi_school','')}\n\n1. DATOS IDENTIFICATIVOS\nAsignatura: ${v('k-asig')}\nDocente: ${v('k-docente')}\nCurso: ${v('k-curso')}\nFecha: ${fechaTxt()||'—'}\nUnidad / Tema: ${v('k-unidad')}\nTiempo estimado: ${v('k-tiempo')}\nObjetivo de Aprendizaje (OA): ${v('k-oa')}\nObjetivo de clase: ${v('k-objclase')}\nIndicadores de evaluación: ${v('k-indic')}\nHabilidades: ${v('k-habil')}\n\n2. SECUENCIA DIDÁCTICA\n`+
-      MOM.map(([id,n,sub])=>`${n.toUpperCase()} (${sub})\nActividades y estrategias: ${v('k-'+id+'-act')}\nRecursos y materiales: ${v('k-'+id+'-rec')}\nEvidencia / evaluación: ${v('k-'+id+'-evi')}`).join('\n\n')+
+      MOM.map(([id,n,sub])=>`${n.toUpperCase()} (${sub})\nActividades y estrategias: ${v('k-'+id+'-act')}\nRecursos y materiales: ${v('k-'+id+'-rec')}\nEvidencia / evaluación: ${v('k-'+id+'-evi')}`+(id==='antes'?`\nVideo de la clase: ${[val('k-video-titulo'),val('k-video-url')].filter(Boolean).join(' · ')||'—'}`:'')).join('\n\n')+
       `\n\n3. ADAPTACIONES CURRICULARES Y OBSERVACIONES\nNEE / Diversidad: ${v('k-nee')}\nNotas del docente / Reflexión post-clase: ${v('k-notas')}`;
   }
   $('#kCopy').addEventListener('click',()=>{
@@ -1061,7 +887,7 @@ const VIDEOS = [
   });
   $('#kClear').addEventListener('click',()=>{$('#kAsk').hidden=false});
   $('#kNo').addEventListener('click',()=>{$('#kAsk').hidden=true});
-  $('#kYes').addEventListener('click',()=>{KF.forEach(el=>el.value='');kSave();updateMail();$('#kAsk').hidden=true;kToast('Formato vaciado.')});
+  $('#kYes').addEventListener('click',()=>{KF.forEach(el=>el.value='');kSave();updateMail();updateVideo();$('#kAsk').hidden=true;kToast('Formato vaciado.')});
 
   /* ---------- PDF ---------- */
   function buildPDF(){
@@ -1090,6 +916,8 @@ const VIDEOS = [
     doc.autoTable({...base,startY:y,head:[['Fase del modelo','Actividades y estrategias','Recursos y materiales','Evidencia / evaluación']],
       body:MOM.map(([id,n,sub])=>[{content:`${n}\n(${sub})`,styles:{fontStyle:'bold',fillColor:LBL}},g(val('k-'+id+'-act')),g(val('k-'+id+'-rec')),g(val('k-'+id+'-evi'))]),
       columnStyles:{0:{cellWidth:34}}});
+    doc.autoTable({...base,startY:doc.lastAutoTable.finalY+2,columnStyles:{0:{cellWidth:34}},body:[[L('Video de la clase (Antes)'),{content:[val('k-video-titulo'),val('k-video-url')].filter(Boolean).join('\n')||'—',styles:{textColor:val('k-video-url')?[37,72,140]:[29,31,33]}}]],
+      didDrawCell:c=>{if(c.section==='body'&&c.column.index===1&&ytId(val('k-video-url')))doc.link(c.cell.x,c.cell.y,c.cell.width,c.cell.height,{url:val('k-video-url')})}});
     y=head('3. Adaptaciones curriculares y observaciones',doc.lastAutoTable.finalY+9);
     doc.autoTable({...base,startY:y,columnStyles:{0:{cellWidth:50}},body:[
       [L('Especificaciones para NEE / Diversidad'),g(val('k-nee'))],
@@ -1124,7 +952,7 @@ const VIDEOS = [
     btn.disabled=true; setSt(st,'','Guardando en Drive…');
     try{
       const pdf=buildPDF().output('datauristring').split(',')[1];
-      const res=await fetch(DRIVE_URL,{method:'POST',body:JSON.stringify({action:'guardar',colegio:S.get('pi_school',''),correo,docente:val('k-docente'),asignatura:val('k-asig'),curso:val('k-curso'),unidad:val('k-unidad'),fecha:fechaTxt(),filename:pdfName(),pdf,datos:formData()})});
+      const res=await fetch(DRIVE_URL,{method:'POST',body:JSON.stringify({action:'guardar',colegio:S.get('pi_school',''),correo,docente:val('k-docente'),asignatura:val('k-asig'),curso:val('k-curso'),unidad:val('k-unidad'),fecha:fechaTxt(),video:val('k-video-url'),filename:pdfName(),pdf,datos:formData()})});
       const r=await res.json();
       if(!r.ok) throw new Error(r.error||'error');
       setSt(st,'ok','Planificación guardada en Drive. Puedes recuperarla con "Buscar mis planificaciones".'); loadCounter();
@@ -1145,7 +973,7 @@ const VIDEOS = [
       list.querySelectorAll('[data-load]').forEach(b=>b.addEventListener('click',()=>{
         if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmar: reemplaza lo escrito';return}
         const d=r.items[+b.dataset.load].datos||{};
-        KF.forEach(el=>{el.value=d[el.id]!=null?d[el.id]:''}); kSave(); updateMail();
+        KF.forEach(el=>{el.value=d[el.id]!=null?d[el.id]:''}); kSave(); updateMail(); updateVideo();
         b.textContent='Cargada'; b.disabled=true; kToast('Planificación cargada en el formato.');
         document.getElementById('kform').scrollIntoView({behavior:'smooth'});
       }));
@@ -1155,15 +983,18 @@ const VIDEOS = [
 
   /* ---------- Contador de la Red ---------- */
   const SCHOOLS=[...document.querySelectorAll('#colegio option')].map(o=>o.value||o.textContent).filter((v,i)=>i>0);
-  function drawCounter(counts){
-    const me=S.get('pi_school','');
-    const rows=SCHOOLS.map(n=>({n,c:counts?(counts[n]||0):null}));
-    if(counts) rows.sort((a,b)=>b.c-a.c||a.n.localeCompare(b.n,'es'));
-    const max=Math.max(1,...rows.map(r=>r.c||0));
-    $('#cBars').innerHTML=rows.map(r=>`<div class="bar-row${r.c?' has':''}${r.c===0?' zero':''}${r.n===me?' me':''}"><span class="bn" title="${esc(r.n)}">${esc(r.n)}${r.n===me?' · tu colegio':''}</span><span class="bt"><i data-w="${r.c?r.c/max*100:0}"></i></span><span class="bv">${r.c==null?'—':r.c}</span></div>`).join('');
+  function drawCounter(plan,vid){
+    const me=S.get('pi_school',''), has=!!plan;
+    const rows=SCHOOLS.map(n=>({n,p:has?(plan[n]||0):null,v:has?((vid||{})[n]||0):null}));
+    if(has) rows.sort((a,b)=>b.p-a.p||b.v-a.v||a.n.localeCompare(b.n,'es'));
+    const mx=Math.max(1,...rows.map(r=>Math.max(r.p||0,r.v||0)));
+    const cell=(cls,x)=>`<span class="bcell ${cls}${x===0?' zero':''}"><span class="bt"><i data-w="${x?x/mx*100:0}"></i></span><span class="bv">${x==null?'—':x}</span></span>`;
+    $('#cBars').innerHTML=`<div class="bar-head"><span>Colegio</span><span>Planificaciones</span><span>Videos de clase</span></div>`+
+      rows.map(r=>`<div class="bar-row2${r.n===me?' me':''}"><span class="bn" title="${esc(r.n)}">${esc(r.n)}${r.n===me?' · tu colegio':''}</span>${cell('plan',r.p)}${cell('vid',r.v)}</div>`).join('');
     requestAnimationFrame(()=>document.querySelectorAll('#cBars i').forEach(i=>i.style.width=i.dataset.w+'%'));
-    if(counts){
-      const tot=rows.reduce((a,r)=>a+r.c,0); $('#cTotal').textContent=tot; $('#cSchools').textContent=`${rows.filter(r=>r.c>0).length}/${SCHOOLS.length}`;
+    if(has){
+      $('#cTotal').textContent=rows.reduce((a,r)=>a+r.p,0); $('#cVideos').textContent=rows.reduce((a,r)=>a+r.v,0);
+      $('#cSchools').textContent=`${rows.filter(r=>r.p>0).length}/${SCHOOLS.length}`;
     }
   }
   async function loadCounter(){
@@ -1172,7 +1003,7 @@ const VIDEOS = [
     try{
       const r=await (await fetch(DRIVE_URL+'?action=resumen')).json();
       if(!r.ok) throw new Error(r.error);
-      drawCounter(r.colegios||{});
+      drawCounter(r.colegios||{},r.videos||{});
       $('#cNote').textContent='Actualizado '+new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})+(r.ultima?' · Última planificación: '+r.ultima:'');
     }catch(e){drawCounter(null);$('#cNote').textContent='No se pudo cargar el contador. Presiona "Actualizar" para reintentar.'}
   }
