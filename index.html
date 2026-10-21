@@ -1001,7 +1001,7 @@ const VIDEOS = [
       if(!r.items.length){setSt(st,'','No hay planificaciones guardadas con ese correo.');return}
       setSt(st,'',`${r.items.length} planificación${r.items.length>1?'es':''} encontrada${r.items.length>1?'s':''}.`);
       list.innerHTML=r.items.map((it,i)=>`<div class="rec-item"><div><b>${esc([it.asignatura,it.curso].filter(Boolean).join(' · ')||'Sin título')}</b><span>${esc(it.unidad||'')}${it.fecha?' · Clase '+esc(it.fecha):''} · Guardada ${esc(it.registro)}</span></div>
-        <div class="row-btns">${it.url?`<a class="btn ghost small" href="${esc(it.url)}" target="_blank" rel="noopener">Abrir PDF</a>`:''}${it.datos?`<button type="button" class="btn small" data-load="${i}">Cargar en el formato</button>`:''}</div></div>`).join('');
+        <div class="row-btns">${/^https?:\/\//.test(it.url||'')?`<a class="btn ghost small" href="${esc(it.url)}" target="_blank" rel="noopener">Abrir PDF</a>`:''}${it.datos?`<button type="button" class="btn small" data-load="${i}">Cargar en el formato</button>`:''}</div></div>`).join('');
       list.querySelectorAll('[data-load]').forEach(b=>b.addEventListener('click',()=>{
         if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Confirmar: reemplaza lo escrito';return}
         const d=r.items[+b.dataset.load].datos||{};
@@ -1058,7 +1058,7 @@ const VIDEOS = [
         <div style="min-width:0"><b>${esc([it.asignatura,it.curso].filter(Boolean).join(' · ')||'Planificación')}${it.unidad?' — '+esc(it.unidad):''}</b>
         <span class="meta">${esc(it.colegio)} · ${esc(it.docente||'Docente')}${it.fecha?' · Clase '+esc(it.fecha):''}</span>
         ${it.oa?`<div class="ex-oa">${esc(it.oa)}</div>`:''}</div>
-        <div class="row-btns">${it.pdf?`<a class="btn ghost small" href="${esc(it.pdf)}" target="_blank" rel="noopener">📄 Ver PDF</a>`:''}${it.video?`<a class="btn ghost small" href="${esc(it.video)}" target="_blank" rel="noopener">🎬 Ver video</a>`:''}</div></div>`).join('')}</div>`;
+        <div class="row-btns">${/^https?:\/\//.test(it.pdf||'')?`<a class="btn ghost small" href="${esc(it.pdf)}" target="_blank" rel="noopener">📄 Ver PDF</a>`:''}${it.video?`<a class="btn ghost small" href="${esc(it.video)}" target="_blank" rel="noopener">🎬 Ver video</a>`:''}</div></div>`).join('')}</div>`;
     }else{
       box.innerHTML=`<div class="ex-videos">${items.map(it=>{const id=ytId(it.video);return `<article class="vcard">
         ${id?`<button type="button" class="vframe" data-yt="${id}" aria-label="Reproducir video"><img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy"></button>`:''}
