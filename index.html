@@ -320,6 +320,23 @@ input[type=date]{width:100%;border:1px solid var(--line-strong);border-radius:8p
 .legend{display:inline-flex;gap:8px;align-items:center;font-size:.85rem;color:var(--ink-2)}
 .lg{display:inline-block;width:12px;height:12px;border-radius:3px}.lg.plan{background:var(--accent)}.lg.vid{background:var(--ink-3);margin-left:8px}
 @media (max-width:620px){.bar-head{display:none}.bar-row2{grid-template-columns:1fr;gap:4px;padding:8px 0;border-bottom:1px solid var(--line)}}
+
+.explorer{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:22px;display:grid;gap:16px}
+.ex-controls{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1.4fr);gap:14px;align-items:end}
+@media (max-width:760px){.ex-controls{grid-template-columns:1fr}}
+.ex-controls select,.ex-controls input{width:100%;border:1px solid var(--line-strong);border-radius:8px;padding:.6rem .75rem;background:var(--bg);font-size:.96rem}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:999px;padding:3px;background:var(--bg);gap:2px}
+.seg button{border:0;background:none;padding:.5rem .95rem;border-radius:999px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.seg button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.ex-plan{display:grid;gap:10px}
+.ex-item{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.ex-item .logo{width:44px;height:44px;border-radius:10px}
+.ex-item b{display:block}
+.ex-item .meta{font-size:.88rem;color:var(--ink-3)}
+.ex-item .ex-oa{font-size:.88rem;color:var(--ink-2);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media (max-width:620px){.ex-item{grid-template-columns:44px minmax(0,1fr)}.ex-item .row-btns{grid-column:1/-1}}
+.ex-videos{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.ex-group{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:6px 0 -2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <style>html,body{height:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
@@ -638,6 +655,21 @@ input[type=date]{width:100%;border:1px solid var(--line-strong);border-radius:8p
       <div class="bars" id="cBars"></div>
       <div class="counter-foot"><span class="legend"><i class="lg plan"></i>Planificaciones <i class="lg vid"></i>Videos</span><span class="note" id="cNote"></span><button type="button" class="linkbtn" id="cRefresh">Actualizar</button></div>
     </div>
+    <div class="row-btns"><button type="button" class="btn" id="exOpen">🔍 Ver planificaciones y videos de la Red</button></div>
+    <div class="explorer" id="explorer" hidden>
+      <div class="cp-head"><div><span class="eyebrow">Explorar la Red</span><h3>Planificaciones y videos de los colegios</h3>
+        <p class="note">Material compartido por los docentes de la Red para inspirar y retroalimentar el trabajo entre colegios.</p></div></div>
+      <div class="ex-controls">
+        <div class="seg" role="tablist" aria-label="Tipo de material">
+          <button type="button" role="tab" data-ex="plan" aria-selected="true">📄 Planificaciones</button>
+          <button type="button" role="tab" data-ex="video" aria-selected="false">🎬 Videos</button>
+        </div>
+        <div class="field"><label for="exSchool">Colegio</label><select id="exSchool"><option value="">Todos los colegios</option></select></div>
+        <div class="field"><label for="exText">Buscar</label><input type="text" id="exText" placeholder="Asignatura, curso, docente o tema"></div>
+      </div>
+      <span class="status" id="exStatus" aria-live="polite"></span>
+      <div id="exList"></div>
+    </div>
   </section>
   <!-- CLASE EN TRES TIEMPOS -->
   <section class="view" id="v-clase" hidden>
@@ -705,7 +737,7 @@ input[type=date]{width:100%;border:1px solid var(--line-strong);border-radius:8p
         <div class="share-grid">
           <div>
             <b>Guardar en Drive de la Red</b>
-            <p class="note">Guarda el PDF en la carpeta de tu colegio y deja un registro para recuperarla después.</p>
+            <p class="note">Guarda el PDF en la carpeta de tu colegio y deja un registro para recuperarla después. <b>Tu planificación y tu video quedarán visibles para los docentes de la Red</b> en la pestaña 📊 Participación (sin tu correo).</p>
             <div class="field"><label for="k-correo">Tu correo</label><input type="text" id="k-correo" inputmode="email" placeholder="nombre@colegio.cl"></div>
             <div><button type="button" class="btn" id="driveBtn">Guardar en Drive</button></div>
             <span class="status" id="driveStatus" aria-live="polite"></span>
@@ -1009,6 +1041,52 @@ const VIDEOS = [
   }
   $('#cRefresh').addEventListener('click',loadCounter);
   drawCounter(null); loadCounter();
+
+  /* ---------- Explorar la Red ---------- */
+  let exData=null, exMode='plan';
+  const logoOf=n=>{const o=[...sel.options].find(o=>o.value===n);const src=o&&LOGOS[o.dataset.logo];return src?`<span class="logo"><img src="${src}" alt=""></span>`:`<span class="logo"><span class="mono">${esc(initials(n||'?'))}</span></span>`};
+  $('#exSchool').innerHTML+=SCHOOLS.map(n=>`<option>${esc(n)}</option>`).join('');
+  function exRender(){
+    const st=$('#exStatus'), box=$('#exList'); if(!exData)return;
+    const f=$('#exSchool').value, q=$('#exText').value.trim().toLowerCase();
+    let items=exData.filter(it=>(!f||it.colegio===f)&&(!q||[it.asignatura,it.curso,it.docente,it.unidad,it.oa,it.videoTitulo,it.colegio].join(' ').toLowerCase().includes(q)));
+    if(exMode==='video') items=items.filter(it=>it.video);
+    if(!items.length){setSt(st,'',exMode==='video'?'No hay videos con esos filtros.':'No hay planificaciones con esos filtros.');box.innerHTML='';return}
+    setSt(st,'',`${items.length} ${exMode==='video'?(items.length>1?'videos':'video'):(items.length>1?'planificaciones':'planificación')}`);
+    if(exMode==='plan'){
+      box.innerHTML=`<div class="ex-plan">${items.map(it=>`<div class="ex-item">${logoOf(it.colegio)}
+        <div style="min-width:0"><b>${esc([it.asignatura,it.curso].filter(Boolean).join(' · ')||'Planificación')}${it.unidad?' — '+esc(it.unidad):''}</b>
+        <span class="meta">${esc(it.colegio)} · ${esc(it.docente||'Docente')}${it.fecha?' · Clase '+esc(it.fecha):''}</span>
+        ${it.oa?`<div class="ex-oa">${esc(it.oa)}</div>`:''}</div>
+        <div class="row-btns">${it.pdf?`<a class="btn ghost small" href="${esc(it.pdf)}" target="_blank" rel="noopener">📄 Ver PDF</a>`:''}${it.video?`<a class="btn ghost small" href="${esc(it.video)}" target="_blank" rel="noopener">🎬 Ver video</a>`:''}</div></div>`).join('')}</div>`;
+    }else{
+      box.innerHTML=`<div class="ex-videos">${items.map(it=>{const id=ytId(it.video);return `<article class="vcard">
+        ${id?`<button type="button" class="vframe" data-yt="${id}" aria-label="Reproducir video"><img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy"></button>`:''}
+        <div class="vinfo"><h3>${esc(it.videoTitulo||[it.asignatura,it.curso].filter(Boolean).join(' · ')||'Video de clase')}</h3>
+        <span class="note">${esc(it.colegio)} · ${esc(it.docente||'Docente')}</span>
+        <span class="note">${esc([it.asignatura,it.curso,it.unidad].filter(Boolean).join(' · '))}</span>
+        <a class="note" href="${esc(it.video)}" target="_blank" rel="noopener">Abrir en YouTube</a></div></article>`}).join('')}</div>`;
+      box.querySelectorAll('.vframe').forEach(b=>b.addEventListener('click',()=>{if(b.classList.contains('playing'))return;b.classList.add('playing');
+        b.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${b.dataset.yt}?autoplay=1&rel=0" title="Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`}));
+    }
+  }
+  async function exLoad(){
+    const st=$('#exStatus');
+    if(!DRIVE_URL){setSt(st,'bad','La conexión con Drive aún no está configurada.');return}
+    setSt(st,'','Cargando material de la Red…'); $('#exList').innerHTML='';
+    try{
+      const r=await (await fetch(DRIVE_URL+'?action=galeria')).json();
+      if(!r.ok||!Array.isArray(r.items)) throw new Error(r.error||'sin datos');
+      exData=r.items; exRender();
+    }catch(e){setSt(st,'bad','No se pudo cargar el material de la Red. Intenta nuevamente en unos minutos.')}
+  }
+  $('#exOpen').addEventListener('click',()=>{const ex=$('#explorer'); ex.hidden=!ex.hidden;
+    $('#exOpen').textContent=ex.hidden?'🔍 Ver planificaciones y videos de la Red':'Ocultar planificaciones y videos';
+    if(!ex.hidden){ if(!exData) exLoad(); ex.scrollIntoView({behavior:'smooth',block:'start'}); }});
+  document.querySelectorAll('[data-ex]').forEach(b=>b.addEventListener('click',()=>{exMode=b.dataset.ex;
+    document.querySelectorAll('[data-ex]').forEach(x=>x.setAttribute('aria-selected',x===b));exRender()}));
+  $('#exSchool').addEventListener('change',exRender); $('#exText').addEventListener('input',exRender);
+  $('#cRefresh').addEventListener('click',()=>{if(!$('#explorer').hidden)exLoad()});
 
   /* ---------- Correo ---------- */
   function mailSubject(){return val('mailSubj')||('Planificación '+[val('k-asig'),val('k-curso'),val('k-unidad')].filter(Boolean).join(' · '))}
